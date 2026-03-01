@@ -571,6 +571,12 @@ class MatrixRoom extends Room {
   @override
   Future<TimelineEvent?> addReaction(
       TimelineEvent reactingTo, Emoticon reaction) async {
+    if (timeline != null &&
+        await (timeline as MatrixTimeline).userHasReacted(reactingTo, reaction)) {
+      await removeReaction(reactingTo, reaction);
+      return null;
+    }
+
     var recent = client.getComponent<RecentEmoticonComponent>();
     recent?.reactedEmoticon(this, reaction);
 

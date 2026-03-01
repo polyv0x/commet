@@ -143,6 +143,22 @@ class MatrixTimeline extends Timeline {
     return _room.convertEvent(event);
   }
 
+  Future<bool> userHasReacted(
+      TimelineEvent reactingTo, Emoticon reaction) async {
+    var event = await _matrixRoom.getEventById(reactingTo.eventId);
+    if (event == null) return false;
+    if (!event.hasAggregatedEvents(
+        _matrixTimeline!, matrix.RelationshipTypes.reaction)) return false;
+
+    return event
+        .aggregatedEvents(_matrixTimeline!, matrix.RelationshipTypes.reaction)
+        .where((e) => e.senderId == _matrixRoom.client.userID)
+        .any((e) {
+      final content = e.content['m.relates_to'] as Map<String, Object?>?;
+      return content?['key'] == reaction.key;
+    });
+  }
+
   Future<void> removeReaction(
       TimelineEvent reactingTo, Emoticon reaction) async {
     var event = await _matrixRoom.getEventById(reactingTo.eventId);
