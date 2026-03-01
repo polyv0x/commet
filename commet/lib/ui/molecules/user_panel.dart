@@ -63,6 +63,17 @@ class _UserPanelState extends material.State<UserPanel> {
     color = member.defaultColor;
     avatar = member.avatar;
     detail = member.detail;
+    if (avatar == null) _loadMemberAvatar();
+  }
+
+  void _loadMemberAvatar() async {
+    if (widget.isDirectMessage) return;
+    final img = await widget.contextRoom.fetchMemberAvatar(widget.userId);
+    if (mounted && img != null) {
+      setState(() {
+        avatar = img;
+      });
+    }
   }
 
   @override

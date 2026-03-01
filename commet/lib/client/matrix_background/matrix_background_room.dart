@@ -193,6 +193,9 @@ class MatrixBackgroundRoom implements Room {
   }
 
   @override
+  Future<ImageProvider?> fetchMemberAvatar(String userId) async => null;
+
+  @override
   Future<Timeline> getTimeline({String? contextEventId}) {
     throw UnimplementedError();
   }

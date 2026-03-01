@@ -230,6 +230,7 @@ class _TimelineEventViewMessageState extends State<TimelineEventViewMessage>
     senderName = sender.displayName;
     senderAvatar = sender.avatar;
     senderColor = sender.defaultColor;
+    if (senderAvatar == null) _loadSenderAvatar(senderId);
 
     sentTime = event.originServerTs;
 
@@ -282,6 +283,17 @@ class _TimelineEventViewMessageState extends State<TimelineEventViewMessage>
                 widget.timeline!, event) ==
             true &&
         event.getLinks(timeline: widget.timeline!)?.isEmpty == false;
+  }
+
+  void _loadSenderAvatar(String userId) async {
+    var room = widget.room ?? widget.timeline?.room;
+    if (room == null) return;
+    final img = await room.fetchMemberAvatar(userId);
+    if (mounted && img != null && senderId == userId) {
+      setState(() {
+        senderAvatar = img;
+      });
+    }
   }
 
   String timestampToString(DateTime time) {

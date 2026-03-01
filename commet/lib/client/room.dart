@@ -234,6 +234,8 @@ abstract class Room {
 
   Future<Member> fetchMember(String id);
 
+  Future<ImageProvider?> fetchMemberAvatar(String userId) async => null;
+
   List<Role> get availableRoles;
 
   Future<void> setMemberRole(String id, Role role);

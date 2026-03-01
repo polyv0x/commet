@@ -682,6 +682,11 @@ class MatrixRoom extends Room {
   }
 
   @override
+  Future<ImageProvider?> fetchMemberAvatar(String userId) {
+    return _client.fetchGlobalAvatar(userId);
+  }
+
+  @override
   Future<Member> fetchMember(String id) async {
     var member = await _matrixRoom.requestUser(id);
     if (member != null) {

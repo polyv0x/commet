@@ -101,40 +101,20 @@ class Avatar extends StatelessWidget {
       );
     }
 
-    if (image != null) {
-      return SizedBox(
-        width: radius * 2,
-        height: radius * 2,
-        child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: border,
-              borderRadius: BorderRadius.circular(radius / 1.25),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(radius / 1.25),
-              child: FadeInImage(
-                placeholder: transparentImage.image,
-                fadeInDuration: Durations.short2,
-                image: image!,
-                fit: BoxFit.cover,
-                filterQuality: FilterQuality.medium,
-              ),
-            )),
-      );
-    }
+    final borderRadius = BorderRadius.circular(radius / 1.25);
 
-    return SizedBox(
+    final placeholder = SizedBox(
       width: radius * 2,
       height: radius * 2,
       child: placeholderText != null
           ? DecoratedBox(
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(radius / 1.25),
+                  borderRadius: borderRadius,
                   color: placeholderColor ?? Colors.transparent,
                   border: border),
               child: Align(
                   alignment: Alignment.center,
-                  child: placeholderText != null && placeholderText!.isNotEmpty
+                  child: placeholderText!.isNotEmpty
                       ? Text(
                           placeholderText!.characters.first.toUpperCase(),
                           style: Theme.of(context)
@@ -145,6 +125,37 @@ class Avatar extends StatelessWidget {
                       : null),
             )
           : null,
+    );
+
+    if (image == null) return placeholder;
+
+    return SizedBox(
+      width: radius * 2,
+      height: radius * 2,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          placeholder,
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: border,
+              borderRadius: borderRadius,
+            ),
+            child: ClipRRect(
+              borderRadius: borderRadius,
+              child: FadeInImage(
+                placeholder: transparentImage.image,
+                fadeInDuration: Durations.short2,
+                image: image!,
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.medium,
+                imageErrorBuilder: (context, error, stackTrace) =>
+                    const SizedBox.shrink(),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

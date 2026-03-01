@@ -35,6 +35,7 @@ import 'package:matrix/encryption.dart';
 import 'package:flutter_vodozemac/flutter_vodozemac.dart' as vodozemac;
 
 import '../../ui/atoms/code_block.dart';
+import 'matrix_mxc_image_provider.dart';
 import 'matrix_room.dart';
 import 'matrix_space.dart';
 import 'package:vodozemac/vodozemac.dart' as vod;
@@ -345,6 +346,26 @@ class MatrixClient extends Client {
 
   matrix.Client getMatrixClient() {
     return _matrixClient;
+  }
+
+  final Map<String, Future<ImageProvider?>> _avatarFetches = {};
+
+  Future<ImageProvider?> fetchGlobalAvatar(String userId) {
+    return _avatarFetches.putIfAbsent(userId, () async {
+      try {
+        final fields = await _matrixClient.request(matrix.RequestType.GET,
+            "/client/v3/profile/${Uri.encodeComponent(userId)}");
+        final url = fields['avatar_url'] as String?;
+        if (url != null) {
+          return MatrixMxcImage(Uri.parse(url), _matrixClient,
+              doThumbnail: true,
+              autoLoadFullRes: false,
+              doFullres: false,
+              thumbnailHeight: 86);
+        }
+      } catch (_) {}
+      return null;
+    });
   }
 
   @override
