@@ -47,6 +47,7 @@ class _MatrixUIARequestState extends State<MatrixUIARequest> {
   void submitAuthentication(String password) {
     widget.request.completeStage(AuthenticationPassword(
         password: password,
-        identifier: AuthenticationUserIdentifier(user: "alice")));
+        identifier: AuthenticationUserIdentifier(
+            user: widget.client.getMatrixClient().userID!)));
   }
 }
