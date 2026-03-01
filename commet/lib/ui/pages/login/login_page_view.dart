@@ -1,11 +1,13 @@
 import 'dart:ui';
 
 import 'package:commet/client/auth.dart';
+import 'package:commet/client/client.dart';
 import 'package:commet/config/global_config.dart';
 import 'package:commet/ui/atoms/shader/star_trails.dart';
 import 'package:commet/ui/navigation/navigation_utils.dart';
 import 'package:commet/ui/pages/settings/app_settings_page.dart';
 import 'package:commet/ui/pages/settings/categories/about/settings_category_about.dart';
+import 'package:commet/ui/pages/signup/signup_page.dart';
 import 'package:commet/utils/common_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,7 +30,8 @@ class LoginPageView extends StatefulWidget {
       this.isServerValid = false,
       this.hasSsoSupport = false,
       this.hasPasswordSupport = false,
-      this.updateHomeserver});
+      this.updateHomeserver,
+      this.onLoginSuccess});
   final bool canNavigateBack;
   final bool isLoggingIn;
   final bool? homeserverChecked;
@@ -44,6 +47,7 @@ class LoginPageView extends StatefulWidget {
       doPasswordLogin;
 
   final Function(String)? updateHomeserver;
+  final Function(Client loggedInClient)? onLoginSuccess;
 
   @override
   State<LoginPageView> createState() => _LoginPageViewState();
@@ -292,6 +296,32 @@ class _LoginPageViewState extends State<LoginPageView> {
         passwordEntry(),
         const SizedBox(height: 16),
         loginButton(),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(width: 100, height: 10, child: tiamat.Seperator()),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: tiamat.Text.labelLow(CommonStrings.labelOr),
+            ),
+            const SizedBox(width: 100, height: 10, child: tiamat.Seperator()),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: tiamat.Button.secondary(
+            text: "Create account",
+            onTap: () => NavigationUtils.navigateTo(
+                context,
+                SignupPage(
+                  onSuccess: widget.onLoginSuccess,
+                )),
+          ),
+        ),
       ],
     );
   }

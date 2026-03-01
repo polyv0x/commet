@@ -90,6 +90,7 @@ class LoginPageState extends State<LoginPage> {
       hasPasswordSupport:
           loginFlows?.whereType<PasswordLoginFlow>().isNotEmpty == true,
       isServerValid: isServerValid,
+      onLoginSuccess: widget.onSuccess,
     );
   }
 

@@ -857,6 +857,35 @@ class MatrixClient extends Client {
     return result;
   }
 
+  Future<LoginResult> register(String username, String password) async {
+    try {
+      await _matrixClient.register(
+        username: username,
+        password: password,
+        initialDeviceDisplayName: BuildConfig.appName,
+      );
+
+      if (_matrixClient.accessToken != null) {
+        preferences.addRegisteredMatrixClient(identifier);
+        await _postLoginSuccess();
+        return LoginResultSuccess();
+      }
+
+      return LoginResultFailed();
+    } on matrix.MatrixException catch (e) {
+      if (e.error == matrix.MatrixError.M_USER_IN_USE) {
+        return LoginResultError("Username is already taken");
+      }
+      if (e.requireAdditionalAuthentication) {
+        return LoginResultError(
+            "This server requires additional verification to register. Please contact your server administrator.");
+      }
+      return LoginResultError(e.errorMessage ?? "Registration failed");
+    } catch (e) {
+      return LoginResultError(e.toString());
+    }
+  }
+
   static (MatrixLinkType, String, String)? parseMatrixLink(Uri uri) {
     if (uri.authority != "matrix.to") {
       return null;
