@@ -591,8 +591,10 @@ class MessageInputState extends State<MessageInput> {
     if (widget.disableEnterToSend != true) {
       if (HardwareKeyboard.instance
           .isLogicalKeyPressed(LogicalKeyboardKey.enter)) {
-        if (autoFillSelection != null && autoFillRange != null) {
-          applyAutoFill(autoFillResults![autoFillSelection!]);
+        if (autoFillResults != null &&
+            autoFillResults!.isNotEmpty &&
+            autoFillRange != null) {
+          applyAutoFill(autoFillResults![autoFillSelection ?? 0]);
           return KeyEventResult.handled;
         }
 
