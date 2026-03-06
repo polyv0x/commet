@@ -44,10 +44,12 @@ class PopupDialog extends StatelessWidget {
       {super.key,
       required this.title,
       required this.content,
+      this.titleLeading,
       this.contentPadding = 8,
       this.width = null,
       this.height = null});
   final String? title;
+  final Widget? titleLeading;
   final double? width;
   final double? height;
   final double contentPadding;
@@ -58,6 +60,7 @@ class PopupDialog extends StatelessWidget {
   static Future<T?> show<T extends Object?>(BuildContext context,
       {required Widget content,
       String? title,
+      Widget? titleLeading,
       double? width,
       double? height,
       double contentPadding = 8,
@@ -72,6 +75,7 @@ class PopupDialog extends StatelessWidget {
             data: Theme.of(context),
             child: PopupDialog(
               title: title,
+              titleLeading: titleLeading,
               content: content,
               width: width,
               height: height,
@@ -100,7 +104,9 @@ class PopupDialog extends StatelessWidget {
       title: title == null
           ? null
           : Row(
+              spacing: 8,
               children: [
+                if (titleLeading != null) titleLeading!,
                 Text(title!),
               ],
             ),

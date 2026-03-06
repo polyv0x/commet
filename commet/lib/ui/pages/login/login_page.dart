@@ -9,7 +9,7 @@ import 'package:commet/utils/debounce.dart';
 import 'package:commet/utils/rng.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:commet/ui/navigation/adaptive_dialog.dart';
+import 'package:commet/ui/navigation/adaptive_dialog.dart' show AdaptiveDialog, DialogType;
 import 'package:tiamat/tiamat.dart' as tiamat;
 
 class LoginPage extends StatefulWidget {
@@ -133,8 +133,10 @@ class LoginPageState extends State<LoginPage> {
         AdaptiveDialog.show(
           context,
           title: "Login failed",
-          builder: (_) => tiamat.Text(
-            message,
+          type: DialogType.error,
+          builder: (_) => Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: tiamat.Text.body(message),
           ),
         );
       }

@@ -9,6 +9,22 @@ import 'package:tiamat/tiamat.dart';
 import 'package:tiamat/tiamat.dart' as tiamat;
 import 'package:flutter/material.dart' as m;
 
+enum DialogType { info, warning, error }
+
+extension _DialogTypeVisuals on DialogType {
+  IconData get icon => switch (this) {
+        DialogType.info => Icons.info_outline_rounded,
+        DialogType.warning => Icons.warning_amber_rounded,
+        DialogType.error => Icons.error_outline_rounded,
+      };
+
+  Color color(ColorScheme cs) => switch (this) {
+        DialogType.info => cs.primary,
+        DialogType.warning => cs.tertiary,
+        DialogType.error => cs.error,
+      };
+}
+
 class AdaptiveDialog {
   static Future<T?> pickOne<T extends Object?>(
     BuildContext context, {
@@ -103,30 +119,38 @@ class AdaptiveDialog {
 
   static Future<void> showError(
       BuildContext context, Object exception, StackTrace trace) {
-    return show(context, builder: (context) {
-      return Column(
-        children: [
-          tiamat.Text.body(exception.toString()),
-        ],
-      );
-    }, title: "Error");
+    return show(context,
+        type: DialogType.error,
+        builder: (context) {
+          return Column(
+            children: [
+              tiamat.Text.body(exception.toString()),
+            ],
+          );
+        },
+        title: "Error");
   }
 
   static Future<T?> show<T extends Object?>(
     BuildContext context, {
     required Widget Function(BuildContext context) builder,
     String? title,
+    DialogType? type,
     bool scrollable = true,
     bool dismissible = true,
     double contentPadding = 8,
     double initialHeightMobile = 0.5,
   }) async {
     if (Layout.desktop) {
+      final cs = Theme.of(context).colorScheme;
       return PopupDialog.show<T>(context,
           content: scrollable
               ? SingleChildScrollView(child: builder(context))
               : builder(context),
           title: title,
+          titleLeading: type == null
+              ? null
+              : Icon(type.icon, color: type.color(cs), size: 22),
           contentPadding: contentPadding,
           barrierDismissible: dismissible);
     }
@@ -139,6 +163,7 @@ class AdaptiveDialog {
       isDismissible: dismissible,
       backgroundColor: m.Theme.of(context).colorScheme.surfaceContainerLow,
       builder: (context) {
+        final cs = Theme.of(context).colorScheme;
         return SingleChildScrollView(
             child: Container(
           padding:
@@ -152,10 +177,17 @@ class AdaptiveDialog {
                   if (title != null)
                     Padding(
                       padding: const EdgeInsets.all(12.0),
-                      child: tiamat.Text(
-                        title,
-                        type: TextType.largeTitle,
-                        color: Theme.of(context).colorScheme.onSurface,
+                      child: Row(
+                        spacing: 10,
+                        children: [
+                          if (type != null)
+                            Icon(type.icon, color: type.color(cs), size: 28),
+                          tiamat.Text(
+                            title,
+                            type: TextType.largeTitle,
+                            color: cs.onSurface,
+                          ),
+                        ],
                       ),
                     ),
                   Center(child: builder(context)),
