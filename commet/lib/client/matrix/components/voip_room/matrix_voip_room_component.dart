@@ -26,6 +26,7 @@ class MatrixVoipRoomComponent
 
   MatrixVoipRoomComponent(this.client, this.room) {
     backend = MatrixLivekitBackend(room);
+    _scheduleExpiryRefresh();
   }
 
   static bool isVoipRoom(MatrixRoom room) {
@@ -34,6 +35,8 @@ class MatrixVoipRoomComponent
   }
 
   StreamController _onParticipantsChanged = StreamController.broadcast();
+  Timer? _expiryTimer;
+  StreamSubscription? _sessionParticipantsSub;
 
   @override
   onSync(JoinedRoomUpdate update) {
@@ -44,12 +47,104 @@ class MatrixVoipRoomComponent
                 true;
 
     if (hasCallMemberEvent) {
+      _scheduleExpiryRefresh();
       _onParticipantsChanged.add(());
+    }
+  }
+
+  // Cap effective expiry at 2 minutes — any actively connected client will
+  // refresh via heartbeat well within this window. Prevents ghost users from
+  // other clients that set very long expires values (e.g. 4 hours).
+  static const _maxExpiryMs = 120000;
+
+  /// Returns the expiry time for a call membership state event, or null if
+  /// it cannot be determined (missing `expires` field and no timestamp source).
+  DateTime? _getMembershipExpiry(StrippedStateEvent stateEvent) {
+    var expiresMs = stateEvent.content.tryGet<num>('expires');
+    if (expiresMs == null) return null;
+
+    // Clamp to our maximum so foreign 4-hour values don't create long ghosts.
+    if (expiresMs.toInt() > _maxExpiryMs) {
+      expiresMs = _maxExpiryMs;
+    }
+
+    // Prefer created_ts from content (works regardless of StrippedStateEvent
+    // vs Event), fall back to originServerTs on full Event instances.
+    final createdTs = stateEvent.content.tryGet<num>('created_ts');
+    if (createdTs != null) {
+      return DateTime.fromMillisecondsSinceEpoch(createdTs.toInt(), isUtc: true)
+          .add(Duration(milliseconds: expiresMs.toInt()));
+    }
+
+    if (stateEvent is Event) {
+      return stateEvent.originServerTs
+          .add(Duration(milliseconds: expiresMs.toInt()));
+    }
+
+    return null;
+  }
+
+  /// Returns true if the call membership event has expired based on its
+  /// `expires` field relative to `created_ts` (or `originServerTs`).
+  /// If the event has an `expires` field but no timestamp source to check
+  /// against, it is treated as expired (fail-closed) to avoid ghost users.
+  bool _isMembershipExpired(StrippedStateEvent stateEvent) {
+    final hasExpires = stateEvent.content.tryGet<num>('expires') != null;
+    final expiry = _getMembershipExpiry(stateEvent);
+
+    // Has an expires field but no way to determine when it was created —
+    // treat as expired rather than showing a potentially stale user.
+    if (hasExpires && expiry == null) return true;
+
+    if (expiry == null) return false;
+    return DateTime.now().toUtc().isAfter(expiry);
+  }
+
+  /// Schedules a timer to fire [onParticipantsChanged] when the next
+  /// membership is due to expire, so the UI removes stale participants
+  /// automatically.
+  void _scheduleExpiryRefresh() {
+    _expiryTimer?.cancel();
+    _expiryTimer = null;
+
+    final state = room.matrixRoom.states[callMemberStateEvent];
+    if (state == null) return;
+
+    final now = DateTime.now().toUtc();
+    Duration? shortest;
+
+    for (var pair in state.entries) {
+      if (pair.value.content.isEmpty) continue;
+
+      final expiry = _getMembershipExpiry(pair.value);
+      if (expiry == null) continue;
+
+      if (expiry.isAfter(now)) {
+        final remaining = expiry.difference(now);
+        if (shortest == null || remaining < shortest) {
+          shortest = remaining;
+        }
+      }
+    }
+
+    if (shortest != null) {
+      _expiryTimer = Timer(shortest, () {
+        _scheduleExpiryRefresh();
+        _onParticipantsChanged.add(());
+      });
     }
   }
 
   @override
   List<String> getCurrentParticipants() {
+    // When we have an active session, use the LiveKit room's actual participant
+    // list — this is the ground truth for who is really connected.
+    if (currentSession != null) {
+      return currentSession!.connectedParticipants;
+    }
+
+    // When not connected, fall back to Matrix state events (with expiry
+    // filtering) so we can still show who's in the call before joining.
     final state = room.matrixRoom.states[callMemberStateEvent];
     if (state == null) {
       return [];
@@ -59,14 +154,13 @@ class MatrixVoipRoomComponent
 
     List<String> participants = List.empty(growable: true);
 
-    // Optimistically include ourselves if we've joined, before the server sync
-    // comes back with our updated state.
-    if (currentSession != null && localUserId != null) {
-      participants.add(localUserId);
-    }
-
     for (var pair in state.entries) {
       if (pair.value.content.isEmpty) {
+        continue;
+      }
+
+      // Skip memberships that have expired based on created_ts + expires.
+      if (_isMembershipExpired(pair.value)) {
         continue;
       }
 
@@ -74,7 +168,7 @@ class MatrixVoipRoomComponent
 
       // Optimistically exclude ourselves if we've left the call, before the
       // server sync comes back with our cleared state.
-      if (currentSession == null && sender == localUserId) {
+      if (sender == localUserId) {
         continue;
       }
 
@@ -95,6 +189,10 @@ class MatrixVoipRoomComponent
   Future<VoipSession?> joinCall() async {
     currentSession = await backend.join();
     currentSession?.onStateChanged.listen(onStateChanged);
+    _sessionParticipantsSub = currentSession?.onParticipantsChanged.listen((_) {
+      _onParticipantsChanged.add(());
+    });
+    _scheduleExpiryRefresh();
     _onParticipantsChanged.add(());
     return currentSession;
   }
@@ -110,6 +208,8 @@ class MatrixVoipRoomComponent
     print("Got call state: ${state}");
 
     if (state == VoipState.ended) {
+      _sessionParticipantsSub?.cancel();
+      _sessionParticipantsSub = null;
       currentSession = null;
       _onParticipantsChanged.add(());
     }

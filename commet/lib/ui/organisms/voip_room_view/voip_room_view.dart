@@ -47,6 +47,7 @@ class _VoipRoomViewState extends State<VoipRoomView> {
 
   void updateCallUrl() {
     widget.voip.getCallServerUrl().then((url) {
+      if (!mounted) return;
       setState(() {
         callServerUrl = url;
       });
@@ -69,7 +70,7 @@ class _VoipRoomViewState extends State<VoipRoomView> {
     final showCall = currentSession != null;
 
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 250),
       switchInCurve: Curves.easeIn,
       switchOutCurve: Curves.easeOut,
       child: showCall

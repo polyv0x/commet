@@ -12,7 +12,7 @@ import 'package:commet/ui/organisms/home_screen/home_screen.dart';
 import 'package:commet/ui/organisms/room_members_list/room_members_list.dart';
 import 'package:commet/ui/organisms/room_side_panel/room_side_panel.dart';
 import 'package:commet/ui/organisms/side_navigation_bar/side_navigation_bar.dart';
-import 'package:commet/ui/organisms/sidebar_call_icon/sidebar_calls_list.dart';
+import 'package:commet/ui/organisms/voice_status_panel/voice_status_panel.dart';
 import 'package:commet/ui/organisms/space_summary/space_summary.dart';
 import 'package:commet/ui/pages/main/main_page.dart';
 import 'package:commet/ui/pages/main/main_page_view_desktop.dart';
@@ -202,12 +202,7 @@ class _MainPageViewMobileState extends State<MainPageViewMobile> {
                           widget.state.selectRoom(room);
                           panelsKey.currentState?.reveal(RevealSide.main);
                         },
-                        extraEntryBuilders: [
-                          (width) {
-                            return SidebarCallsList(
-                                widget.state.clientManager.callManager, width);
-                          }
-                        ],
+                        extraEntryBuilders: [],
                       ),
                     ),
                   ),
@@ -229,11 +224,17 @@ class _MainPageViewMobileState extends State<MainPageViewMobile> {
             child: ScaledSafeArea(
               bottom: true,
               top: false,
-              child: SizedBox(
-                height: 60,
-                child: MainPageViewDesktop.currentUserPanel(
-                    widget.state, context,
-                    height: 60, avatarRadius: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  VoiceStatusPanel(widget.state.clientManager.callManager),
+                  SizedBox(
+                    height: 60,
+                    child: MainPageViewDesktop.currentUserPanel(
+                        widget.state, context,
+                        height: 60, avatarRadius: 20),
+                  ),
+                ],
               ),
             ),
           )

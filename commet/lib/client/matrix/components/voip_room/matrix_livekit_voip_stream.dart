@@ -11,9 +11,14 @@ class MatrixLivekitVoipStream implements VoipStream {
   AudioVisualizer? visualizer;
 
   StreamController _onChanged = StreamController.broadcast();
+  final StreamController<void> _onAudioLevelChanged =
+      StreamController.broadcast();
 
   @override
   Stream<void> get onStreamChanged => _onChanged.stream;
+
+  @override
+  Stream<void> get onAudioLevelChanged => _onAudioLevelChanged.stream;
 
   MatrixLivekitVoipStream(this.publication, this.userId) {
     if (publication.track is AudioTrack) {
@@ -34,7 +39,11 @@ class MatrixLivekitVoipStream implements VoipStream {
   double audiolevel = 0.0;
 
   void setAudioLevel(AudioVisualizerEvent e) {
-    audiolevel = (e.event[0] as double) > 0.5 ? 1 : 0;
+    final newLevel = (e.event[0] as double) > 0.5 ? 1.0 : 0.0;
+    if (newLevel != audiolevel) {
+      audiolevel = newLevel;
+      _onAudioLevelChanged.add(());
+    }
   }
 
   void onStreamUpdatedEvent() {

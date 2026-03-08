@@ -78,6 +78,12 @@ abstract class VoipSession {
 
   Future<void> stopScreenshare();
 
+  /// User IDs of participants actually connected to the call.
+  List<String> get connectedParticipants;
+
+  /// Fires when participants connect or disconnect from the call.
+  Stream<void> get onParticipantsChanged;
+
   Future<void> setCamera(MediaDeviceInfo? device);
 
   Future<void> stopCamera();

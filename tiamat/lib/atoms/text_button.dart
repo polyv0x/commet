@@ -266,12 +266,14 @@ class TextButton extends StatelessWidget {
                               size: iconSize,
                               icon!,
                               weight: 0.5,
-                              color: highlighted
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.onSecondaryContainer
-                                  : iconColor ??
-                                      Theme.of(context).colorScheme.onSurface,
+                              color: iconColor ??
+                                  (highlighted
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .onSecondaryContainer
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .onSurface),
                             ),
                     ),
                   ),

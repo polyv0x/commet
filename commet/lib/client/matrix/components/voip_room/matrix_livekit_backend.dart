@@ -150,12 +150,33 @@ class MatrixLivekitBackend {
     final stateKey =
         "_${room.client.self!.identifier}_${room.matrixRoom.client.deviceID!}_m.call";
 
+    // Clear this device's membership from every other voice channel before
+    // joining this one, so the user cannot appear in two rooms simultaneously.
+    for (final otherRoom in room.matrixRoom.client.rooms) {
+      if (otherRoom.id == room.matrixRoom.id) continue;
+      final states =
+          otherRoom.states[MatrixVoipRoomComponent.callMemberStateEvent];
+      if (states == null) continue;
+      final existing = states[stateKey];
+      if (existing == null || existing.content.isEmpty) continue;
+      try {
+        await room.matrixRoom.client.setRoomStateWithKey(
+            otherRoom.id,
+            MatrixVoipRoomComponent.callMemberStateEvent,
+            stateKey,
+            {});
+      } catch (e) {
+        Log.e("Failed to clear stale membership in ${otherRoom.id}: $e");
+      }
+    }
+
     await room.matrixRoom.client.setRoomStateWithKey(room.matrixRoom.id,
         MatrixVoipRoomComponent.callMemberStateEvent, stateKey, {
       "application": "m.call",
       "call_id": "",
       "device_id": room.matrixRoom.client.deviceID!,
-      "expires": 14400000,
+      "expires": 120000,
+      "created_ts": DateTime.now().millisecondsSinceEpoch,
       "foci_preferred": fociUrl
           .map((e) => {
                 "type": "livekit",

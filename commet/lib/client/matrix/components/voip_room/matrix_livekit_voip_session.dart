@@ -26,6 +26,8 @@ class MatrixLivekitVoipSession implements VoipSession {
   String? heartbeatDelayId;
 
   final StreamController<void> _onVolumeChanged = StreamController.broadcast();
+  final StreamController<void> _onParticipantsChanged =
+      StreamController.broadcast();
 
   MatrixLivekitVoipSession(this.room, this.livekitRoom) {
     clientManager?.callManager.onClientSessionStarted(this);
@@ -148,10 +150,12 @@ class MatrixLivekitVoipSession implements VoipSession {
 
   void onParticipantConnected(lk.ParticipantConnectedEvent event) {
     clientManager?.callManager.joinCallSound();
+    _onParticipantsChanged.add(());
   }
 
   void onParticipantDisconnected(lk.ParticipantDisconnectedEvent event) {
     clientManager?.callManager.endCallSound();
+    _onParticipantsChanged.add(());
   }
 
   void onLocalTrackPublished(lk.LocalTrackPublishedEvent event) {
@@ -365,6 +369,24 @@ class MatrixLivekitVoipSession implements VoipSession {
 
   @override
   List<VoipStream> streams = List<VoipStream>.empty(growable: true);
+
+  @override
+  Stream<void> get onParticipantsChanged => _onParticipantsChanged.stream;
+
+  @override
+  List<String> get connectedParticipants {
+    final localId = room.client.self?.identifier;
+    final participants = <String>[];
+    if (localId != null) participants.add(localId);
+
+    for (var entry in livekitRoom.remoteParticipants.entries) {
+      final userId = entry.key.split(":").getRange(0, 2).join(":");
+      if (!participants.contains(userId)) {
+        participants.add(userId);
+      }
+    }
+    return participants;
+  }
 
   @override
   bool get supportsScreenshare => true;

@@ -321,5 +321,17 @@ class MatrixVoipSession implements VoipSession {
   double get generalAudioLevel => (remoteUserMediaStream?.audiolevel ?? 0) * 3;
 
   @override
+  List<String> get connectedParticipants {
+    final participants = <String>[client.identifier];
+    if (remoteUserId != null && state == VoipState.connected) {
+      participants.add(remoteUserId!);
+    }
+    return participants;
+  }
+
+  @override
+  Stream<void> get onParticipantsChanged => _onConnectionChanged.stream.map((_) {});
+
+  @override
   Stream<void> get onUpdateVolumeVisualizers => _onVolumeChanged.stream;
 }

@@ -18,6 +18,9 @@ class MatrixVoipStream implements VoipStream {
   @override
   Stream<void> get onStreamChanged => _onChanged.stream;
 
+  @override
+  Stream<void> get onAudioLevelChanged => Stream.empty();
+
   MatrixVoipStream(this.stream, this.session) {
     initRenderer();
     stream.onStreamChanged.stream.listen(_onStreamChanged);

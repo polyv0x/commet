@@ -34,6 +34,7 @@ class _VoipStreamViewState extends State<VoipStreamView>
 
   late AnimationController audioLevel;
   late List<StreamSubscription> subs;
+  bool _hovered = false;
 
   late GlobalKey rendererKey = GlobalKey();
 
@@ -43,6 +44,7 @@ class _VoipStreamViewState extends State<VoipStreamView>
     var room = widget.session.client.getRoom(widget.session.roomId)!;
     subs = [
       widget.stream.onStreamChanged.listen(onStreamChanged),
+      widget.stream.onAudioLevelChanged.listen((_) => timer()),
       widget.session.onUpdateVolumeVisualizers.listen((_) => timer()),
     ];
     user = room.getMemberOrFallback(widget.stream.streamUserId);
@@ -60,45 +62,85 @@ class _VoipStreamViewState extends State<VoipStreamView>
   }
 
   void timer() {
-    audioLevel.animateTo(widget.stream.audiolevel);
+    final target = widget.stream.audiolevel;
+    final rising = target > audioLevel.value;
+    audioLevel.animateTo(
+      target,
+      duration: rising
+          ? const Duration(milliseconds: 80)
+          : const Duration(milliseconds: 400),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-        animation: audioLevel,
-        builder: (context, child) {
-          return Stack(
-            alignment: Alignment.topRight,
-            children: [
-              Container(
-                  clipBehavior: Clip.antiAlias,
-                  foregroundDecoration: widget.borderColor != null
-                      ? BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                              color: widget.borderColor!,
-                              width: 2,
-                              strokeAlign: BorderSide.strokeAlignCenter))
-                      : null,
-                  decoration:
-                      BoxDecoration(borderRadius: BorderRadius.circular(8)),
-                  child: buildDefault()),
-              if (widget.canFullscreen &&
-                      widget.stream.type == VoipStreamType.video ||
-                  widget.stream.type == VoipStreamType.screenshare)
-                SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: tiamat.IconButton(
-                    icon: Icons.fullscreen,
-                    size: 20,
-                    onPressed: widget.onFullscreen,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedBuilder(
+          animation: audioLevel,
+          builder: (context, child) {
+            return Stack(
+              alignment: Alignment.topRight,
+              children: [
+                Container(
+                    clipBehavior: Clip.antiAlias,
+                    foregroundDecoration: widget.borderColor != null
+                        ? BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: widget.borderColor!,
+                                width: 2,
+                                strokeAlign: BorderSide.strokeAlignCenter))
+                        : null,
+                    decoration:
+                        BoxDecoration(borderRadius: BorderRadius.circular(8)),
+                    child: buildDefault()),
+                if (widget.canFullscreen &&
+                        widget.stream.type == VoipStreamType.video ||
+                    widget.stream.type == VoipStreamType.screenshare)
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: tiamat.IconButton(
+                      icon: Icons.fullscreen,
+                      size: 20,
+                      onPressed: widget.onFullscreen,
+                    ),
                   ),
-                )
-            ],
-          );
-        });
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      opacity: _hovered ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 150),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 3),
+                          child: Text(
+                            user.displayName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+    );
   }
 
   Widget buildDefault() {
@@ -122,16 +164,33 @@ class _VoipStreamViewState extends State<VoipStreamView>
                 child: AnimatedOpacity(
                   opacity: widget.stream.isMuted ? 0.5 : 1.0,
                   duration: Duration(milliseconds: 200),
-                  child: ClipOval(
-                    child: tiamat.Avatar(
-                        border: Border.all(
-                            strokeAlign: 0.5,
-                            color: getBorderColor(context),
-                            width: clampDouble(audioLevel.value * 15, 0, 5)),
-                        radius: 50,
-                        image: user.avatar,
-                        placeholderColor: user.defaultColor,
-                        placeholderText: user.displayName),
+                  child: SizedBox(
+                    width: 108,
+                    height: 108,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: getBorderColor(context),
+                              width: clampDouble(audioLevel.value * 15, 0, 5),
+                              strokeAlign: BorderSide.strokeAlignOutside,
+                            ),
+                          ),
+                        ),
+                        ClipOval(
+                          child: tiamat.Avatar(
+                              radius: 50,
+                              image: user.avatar,
+                              placeholderColor: user.defaultColor,
+                              placeholderText: user.displayName),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

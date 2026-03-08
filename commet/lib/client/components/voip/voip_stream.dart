@@ -13,6 +13,8 @@ abstract class VoipStream {
 
   Stream<void> get onStreamChanged;
 
+  Stream<void> get onAudioLevelChanged;
+
   String get streamUserId;
 
   String get label;
