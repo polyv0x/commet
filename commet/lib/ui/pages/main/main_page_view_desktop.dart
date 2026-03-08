@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'package:commet/client/call_manager.dart';
 import 'package:commet/client/components/profile/profile_component.dart';
+import 'package:commet/client/components/voip/voip_session.dart';
 import 'package:commet/config/layout_config.dart';
 import 'package:commet/main.dart';
 import 'package:commet/ui/atoms/adaptive_context_menu.dart';
@@ -16,6 +19,7 @@ import 'package:commet/ui/organisms/room_quick_access_menu/room_quick_access_men
 import 'package:commet/ui/organisms/room_side_panel/room_side_panel.dart';
 import 'package:commet/ui/organisms/side_navigation_bar/side_navigation_bar.dart';
 import 'package:commet/ui/organisms/sidebar_call_icon/sidebar_calls_list.dart';
+import 'package:commet/ui/organisms/voice_status_panel/voice_status_panel.dart';
 import 'package:commet/ui/organisms/space_summary/space_summary.dart';
 import 'package:commet/ui/pages/main/main_page.dart';
 import 'package:commet/ui/pages/main/room_primary_view.dart';
@@ -116,10 +120,16 @@ class MainPageViewDesktop extends StatelessWidget {
                       caulkPadRight: Layout.mobile,
                       child: ScaledSafeArea(
                         top: false,
-                        child: SizedBox(
-                            height: 55,
-                            child: currentUserPanel(state, context,
-                                height: 55, avatarRadius: 16)),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            VoiceStatusPanel(state.clientManager.callManager),
+                            SizedBox(
+                                height: 55,
+                                child: currentUserPanel(state, context,
+                                    height: 55, avatarRadius: 16)),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -248,6 +258,9 @@ class MainPageViewDesktop extends StatelessWidget {
           ),
           Row(
             children: [
+              _CallMuteButton(
+                  state.clientManager.callManager,
+                  size: height),
               SizedBox(
                   width: height,
                   height: height,
@@ -472,5 +485,98 @@ class MainPageViewDesktop extends StatelessWidget {
       );
 
     return Placeholder();
+  }
+}
+
+class _CallMuteButton extends StatefulWidget {
+  const _CallMuteButton(this.callManager, {required this.size});
+  final CallManager callManager;
+  final double size;
+
+  @override
+  State<_CallMuteButton> createState() => _CallMuteButtonState();
+}
+
+class _CallMuteButtonState extends State<_CallMuteButton> {
+  late List<StreamSubscription> _subs;
+  StreamSubscription? _sessionSub;
+
+  VoipSession? get _session => widget.callManager.currentSessions
+      .where((s) => s.state == VoipState.connected)
+      .firstOrNull;
+
+  @override
+  void initState() {
+    super.initState();
+    _subs = [
+      widget.callManager.currentSessions.onListUpdated.listen((_) {
+        _rebindSession();
+        setState(() {});
+      }),
+    ];
+    _rebindSession();
+  }
+
+  void _rebindSession() {
+    _sessionSub?.cancel();
+    _sessionSub = _session?.onStateChanged.listen((_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    for (var sub in _subs) sub.cancel();
+    _sessionSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = _session;
+    if (session == null) return const SizedBox.shrink();
+
+    final muted = session.isMicrophoneMuted || session.isDeafened;
+    final deafened = session.isDeafened;
+    final errorColor = Theme.of(context).colorScheme.error;
+    const btnSize = 32.0;
+    const iconSize = 16.0;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: btnSize,
+          height: btnSize,
+          child: tiamat.IconButton(
+            icon: muted ? Icons.mic_off : Icons.mic,
+            iconColor: muted ? errorColor : null,
+            size: iconSize,
+            onPressed: () async {
+              if (deafened) {
+                // Un-deafen first
+                await session.setDeafened(false);
+              } else {
+                if (!muted) clientManager?.callManager.playMuteSound();
+                else clientManager?.callManager.playUnmuteSound();
+                await session.setMicrophoneMute(!muted);
+              }
+              setState(() {});
+            },
+          ),
+        ),
+        SizedBox(
+          width: btnSize,
+          height: btnSize,
+          child: tiamat.IconButton(
+            icon: deafened ? Icons.headset_off : Icons.headphones,
+            iconColor: deafened ? errorColor : null,
+            size: iconSize,
+            onPressed: () async {
+              await session.setDeafened(!deafened);
+              setState(() {});
+            },
+          ),
+        ),
+      ],
+    );
   }
 }

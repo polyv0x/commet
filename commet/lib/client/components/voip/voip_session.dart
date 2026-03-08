@@ -33,6 +33,8 @@ abstract class VoipSession {
 
   bool get isMicrophoneMuted;
 
+  bool get isDeafened;
+
   bool get supportsScreenshare;
 
   bool get isSharingScreen;
@@ -40,6 +42,9 @@ abstract class VoipSession {
   bool get isCameraEnabled;
 
   double get generalAudioLevel;
+
+  /// Round-trip time in milliseconds, or null if unavailable.
+  double? get latencyMs;
 
   VoipStream? get remoteUserMediaStream;
 
@@ -59,6 +64,8 @@ abstract class VoipSession {
   Stream<void> get onUpdateVolumeVisualizers;
 
   Future<void> setMicrophoneMute(bool state);
+
+  Future<void> setDeafened(bool state);
 
   Future<void> updateStats();
 

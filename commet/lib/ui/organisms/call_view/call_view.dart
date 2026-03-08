@@ -2,9 +2,6 @@ import 'dart:async';
 import 'package:commet/client/components/voip/voip_session.dart';
 import 'package:commet/client/components/voip/voip_stream.dart';
 import 'package:commet/client/room.dart';
-import 'package:commet/config/layout_config.dart';
-import 'package:commet/config/preferences.dart';
-import 'package:commet/main.dart';
 import 'package:commet/ui/atoms/lightbox.dart';
 import 'package:commet/ui/layout/bento.dart';
 import 'package:commet/ui/organisms/call_view/voip_fullscreen_stream_view.dart';
@@ -48,8 +45,6 @@ class CallView extends StatefulWidget {
 class _CallViewState extends State<CallView> {
   Timer? statTimer;
   StreamSubscription? sub;
-  bool isMouseHovering = false;
-  bool _showStreamSettings = false;
   VoipStream? mainStream;
   late Room room;
 
@@ -90,143 +85,31 @@ class _CallViewState extends State<CallView> {
   }
 
   Widget callOutgoingView() {
-    return callButtons(
-      canHangUp: true,
-      child: Center(
-        child: RippleAnimation(
-          ripplesCount: 3,
-          scale: 1,
-          color: Theme.of(context).colorScheme.primary,
-          repeat: true,
-          child: Avatar.large(
-              image: room.avatar,
-              placeholderColor: room.defaultColor,
-              placeholderText: room.displayName),
-        ),
-      ),
-    );
-  }
-
-  Widget callButtons(
-      {bool canMute = false,
-      bool canScreenshare = false,
-      bool canHangUp = false,
-      bool canToggleCamera = false,
-      required Widget child}) {
-    final buttonRadius = Layout.mobile ? 24.0 : 18.0;
-    return MouseRegion(
-      onEnter: (event) {
-        setState(() {
-          isMouseHovering = true;
-        });
-      },
-      onExit: (event) {
-        setState(() {
-          isMouseHovering = false;
-        });
-      },
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          child,
-          AnimatedOpacity(
-            opacity: Layout.mobile || isMouseHovering ? 1 : 0,
-            duration: const Duration(milliseconds: 200),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeInOut,
-                  child: _showStreamSettings
-                      ? _streamSettingsPanel()
-                      : const SizedBox.shrink(),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Wrap(
-                    spacing: 12,
-                    children: [
-                      if (canScreenshare)
-                        tiamat.CircleButton(
-                            radius: buttonRadius,
-                            icon: Icons.screen_share_outlined,
-                            onPressed: widget.pickScreenshareSource),
-                      if (widget.currentSession.isSharingScreen && canScreenshare)
-                        tiamat.CircleButton(
-                          radius: buttonRadius,
-                          icon: Icons.stop_screen_share,
-                          onPressed: widget.stopScreenshare,
-                        ),
-                      if (canMute)
-                        tiamat.CircleButton(
-                          radius: buttonRadius,
-                          icon: widget.currentSession.isMicrophoneMuted
-                              ? Icons.mic_off
-                              : Icons.mic,
-                          onPressed: () async {
-                            await widget.setMicrophoneMute
-                                ?.call(!widget.currentSession.isMicrophoneMuted);
-                            setState(() {});
-                          },
-                        ),
-                      if (canToggleCamera)
-                        tiamat.CircleButton(
-                          radius: buttonRadius,
-                          icon: widget.currentSession.isCameraEnabled
-                              ? Icons.no_photography
-                              : Icons.camera_alt_outlined,
-                          onPressed: widget.currentSession.isCameraEnabled
-                              ? widget.disableCamera
-                              : widget.pickCamera,
-                        ),
-                      if (canScreenshare)
-                        tiamat.CircleButton(
-                          radius: buttonRadius,
-                          icon: _showStreamSettings
-                              ? Icons.settings
-                              : Icons.settings_outlined,
-                          onPressed: () => setState(
-                              () => _showStreamSettings = !_showStreamSettings),
-                        ),
-                      if (canHangUp)
-                        tiamat.CircleButton(
-                          color: Theme.of(context).colorScheme.errorContainer,
-                          radius: buttonRadius,
-                          icon: Icons.call_end,
-                          onPressed: () async {
-                            await widget.hangUp?.call();
-                            setState(() {});
-                          },
-                        )
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          )
-        ],
+    return Center(
+      child: RippleAnimation(
+        ripplesCount: 3,
+        scale: 1,
+        color: Theme.of(context).colorScheme.primary,
+        repeat: true,
+        child: Avatar.large(
+            image: room.avatar,
+            placeholderColor: room.defaultColor,
+            placeholderText: room.displayName),
       ),
     );
   }
 
   Widget callConnectedView() {
-    return callButtons(
-        canMute: true,
-        canHangUp: true,
-        canScreenshare: true,
-        canToggleCamera: true,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            var ratio = constraints.maxWidth / constraints.maxHeight;
-
-            if (ratio > 1) {
-              return Row(children: generateLayout());
-            } else {
-              return Column(children: generateLayout());
-            }
-          },
-        ));
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var ratio = constraints.maxWidth / constraints.maxHeight;
+        if (ratio > 1) {
+          return Row(children: generateLayout());
+        } else {
+          return Column(children: generateLayout());
+        }
+      },
+    );
   }
 
   List<Widget> generateLayout() {
@@ -296,117 +179,6 @@ class _CallViewState extends State<CallView> {
         ),
       )
     ];
-  }
-
-  Widget _streamSettingsPanel() {
-    final resOptions = Preferences.streamResolutionOptions;
-    final fpsOptions = Preferences.streamFramerateOptions;
-    final resIdx = resOptions
-        .indexOf(preferences.streamResolution.value)
-        .clamp(0, resOptions.length - 1)
-        .toDouble();
-    final fpsIdx = fpsOptions
-        .indexOf(preferences.streamFramerate.value)
-        .clamp(0, fpsOptions.length - 1)
-        .toDouble();
-    final bitrate = preferences.streamBitrate.value;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-      child: Container(
-        width: 300,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainer.withAlpha(220),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _sliderRow(
-              label: "Resolution",
-              valueLabel: resOptions[resIdx.round()],
-              value: resIdx,
-              min: 0,
-              max: (resOptions.length - 1).toDouble(),
-              divisions: resOptions.length - 1,
-              onChanged: (v) {
-                preferences.streamResolution.set(resOptions[v.round()]);
-                setState(() {});
-              },
-            ),
-            _sliderRow(
-              label: "FPS",
-              valueLabel: fpsOptions[fpsIdx.round()],
-              value: fpsIdx,
-              min: 0,
-              max: (fpsOptions.length - 1).toDouble(),
-              divisions: fpsOptions.length - 1,
-              onChanged: (v) {
-                preferences.streamFramerate.set(fpsOptions[v.round()]);
-                setState(() {});
-              },
-            ),
-            _sliderRow(
-              label: "Bitrate",
-              valueLabel:
-                  bitrate == 0 ? "Auto" : "${bitrate.toStringAsFixed(0)} Mbps",
-              value: bitrate,
-              min: Preferences.streamBitrateMin,
-              max: Preferences.streamBitrateMax,
-              divisions: Preferences.streamBitrateMax.toInt(),
-              onChanged: (v) {
-                preferences.streamBitrate.set(v.roundToDouble());
-                setState(() {});
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _sliderRow({
-    required String label,
-    required String valueLabel,
-    required double value,
-    required double min,
-    required double max,
-    required int divisions,
-    required ValueChanged<double> onChanged,
-  }) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 72,
-          child: tiamat.Text.labelLow(label),
-        ),
-        Expanded(
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 2,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-            ),
-            child: Slider(
-              value: value,
-              min: min,
-              max: max,
-              divisions: divisions,
-              onChanged: onChanged,
-            ),
-          ),
-        ),
-        SizedBox(
-          width: 60,
-          child: Text(
-            valueLabel,
-            textAlign: TextAlign.right,
-            style: Theme.of(context).textTheme.labelSmall,
-          ),
-        ),
-      ],
-    );
   }
 
   Widget callEndedView() {

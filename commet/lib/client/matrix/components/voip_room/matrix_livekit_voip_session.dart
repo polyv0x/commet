@@ -213,6 +213,11 @@ class MatrixLivekitVoipSession implements VoipSession {
   @override
   bool get isMicrophoneMuted => livekitRoom.localParticipant?.isMuted ?? false;
 
+  bool _isDeafened = false;
+
+  @override
+  bool get isDeafened => _isDeafened;
+
   @override
   bool get isSharingScreen =>
       livekitRoom.localParticipant?.isScreenShareEnabled() ?? false;
@@ -241,6 +246,27 @@ class MatrixLivekitVoipSession implements VoipSession {
   @override
   Future<void> setMicrophoneMute(bool state) async {
     await livekitRoom.localParticipant?.setMicrophoneEnabled(!state);
+    _stateChanged.add(());
+  }
+
+  @override
+  Future<void> setDeafened(bool deafened) async {
+    _isDeafened = deafened;
+    // Mute mic when deafening
+    await livekitRoom.localParticipant?.setMicrophoneEnabled(!deafened);
+    // Disable/enable all remote audio tracks
+    for (final participant in livekitRoom.remoteParticipants.values) {
+      for (final pub in participant.trackPublications.values) {
+        final track = pub.track;
+        if (track != null && track.kind == lk.TrackType.AUDIO) {
+          if (deafened) {
+            await track.disable();
+          } else {
+            await track.enable();
+          }
+        }
+      }
+    }
     _stateChanged.add(());
   }
 
@@ -343,8 +369,55 @@ class MatrixLivekitVoipSession implements VoipSession {
   @override
   bool get supportsScreenshare => true;
 
+  double? _latencyMs;
+
   @override
-  Future<void> updateStats() async {}
+  double? get latencyMs => _latencyMs;
+
+  @override
+  Future<void> updateStats() async {
+    final rtt = await _getRttMs(livekitRoom.engine.publisher?.pc) ??
+        await _getRttMs(livekitRoom.engine.subscriber?.pc);
+    if (rtt != null) _latencyMs = rtt;
+  }
+
+  Future<double?> _getRttMs(dynamic pc) async {
+    if (pc == null) return null;
+    try {
+      final stats = await pc.getStats() as List;
+
+      // Prefer candidate-pair currentRoundTripTime (transport-level RTT)
+      String? selectedPairId;
+      for (final report in stats) {
+        if (report.type == 'transport') {
+          selectedPairId =
+              report.values['selectedCandidatePairId'] as String?;
+          break;
+        }
+      }
+      for (final report in stats) {
+        if (report.type != 'candidate-pair') continue;
+        final isSelected = selectedPairId != null
+            ? report.id == selectedPairId
+            : (report.values['nominated'] == true ||
+                report.values['state'] == 'succeeded');
+        if (!isSelected) continue;
+        final rttRaw = report.values['currentRoundTripTime'];
+        if (rttRaw != null) return (rttRaw as num).toDouble() * 1000;
+      }
+
+      // Fall back to RTCP-based RTT from remote-inbound-rtp
+      for (final report in stats) {
+        if (report.type != 'remote-inbound-rtp') continue;
+        final rttRaw = report.values['roundTripTime'];
+        if (rttRaw != null) return (rttRaw as num).toDouble() * 1000;
+      }
+
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Future<ScreenCaptureSource?> pickScreenCapture(BuildContext context) async {

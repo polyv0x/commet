@@ -75,6 +75,14 @@ class MatrixVoipSession implements VoipSession {
   @override
   bool get isMicrophoneMuted => session.isMicrophoneMuted;
 
+  bool _isDeafened = false;
+
+  @override
+  bool get isDeafened => _isDeafened;
+
+  @override
+  double? get latencyMs => null;
+
   @override
   String? get remoteUserName => session.remoteUser?.displayName;
 
@@ -161,6 +169,19 @@ class MatrixVoipSession implements VoipSession {
   @override
   Future<void> setMicrophoneMute(bool state) {
     return session.setMicrophoneMuted(state);
+  }
+
+  @override
+  Future<void> setDeafened(bool deafened) async {
+    _isDeafened = deafened;
+    await session.setMicrophoneMuted(deafened);
+    // Mute all remote audio tracks
+    for (final stream in session.getRemoteStreams) {
+      for (final track in stream.stream!.getAudioTracks()) {
+        track.enabled = !deafened;
+      }
+    }
+    _onStateChanged.add(());
   }
 
   Future<void> setCameraEnabled(bool state) {
