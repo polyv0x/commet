@@ -3,6 +3,15 @@ import 'package:commet/main.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
 class Layout {
+  static const double desktopInputButtonSize = 35;
+  static const double mobileInputButtonSize = 40;
+  static const double inputButtonVerticalPadding = 10;
+
+  static double get userPanelHeight =>
+      desktopInputButtonSize + inputButtonVerticalPadding * 2;
+  static double get mobileUserPanelHeight =>
+      mobileInputButtonSize + inputButtonVerticalPadding * 2;
+
   static WebBrowserInfo? browserInfo;
   static bool? _isWebDesktopCache;
 

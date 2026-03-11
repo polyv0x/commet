@@ -18,15 +18,6 @@ class ChatView extends StatelessWidget {
   const ChatView(this.state, {super.key});
   final ChatState state;
 
-  String get sendEncryptedMessagePrompt =>
-      Intl.message("Send an encrypted message",
-          name: "sendEncryptedMessagePrompt",
-          desc: "Placeholder text for message input in an encrypted room");
-
-  String get sendUnencryptedMessagePrompt => Intl.message("Send a message",
-      name: "sendUnencryptedMessagePrompt",
-      desc: "Placeholder text for message input in an unencrypted room");
-
   String get cantSentMessagePrompt => Intl.message(
       "You do not have permission to send a message in this room",
       name: "cantSentMessagePrompt",
@@ -48,11 +39,21 @@ class ChatView extends StatelessWidget {
       Expanded(
           child: Stack(
         fit: StackFit.expand,
-        children: [timeline(), const ParticlePlayer()],
+        children: [
+          timeline(),
+          const ParticlePlayer(),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: _e2eeBadge(context),
+          ),
+        ],
       )),
       input(),
     ]);
   }
+
+  Widget _e2eeBadge(BuildContext context) => _E2eeBadge(state.room.isE2EE);
 
   Widget timeline() {
     return state.timeline == null
@@ -123,7 +124,7 @@ class ChatView extends StatelessWidget {
         onTextUpdated: state.onInputTextUpdated,
         addAttachment: state.addAttachment,
         removeAttachment: state.removeAttachment,
-        size: Layout.mobile ? 40 : 35,
+        size: Layout.mobile ? Layout.mobileInputButtonSize : Layout.desktopInputButtonSize,
         iconScale: Layout.mobile ? 0.6 : 0.5,
         isProcessing: state.processing,
         enabled: state.room.permissions.canSendMessage,
@@ -155,9 +156,7 @@ class ChatView extends StatelessWidget {
         },
         editLastMessage: state.editLastMessage,
         hintText: state.room.permissions.canSendMessage
-            ? state.room.isE2EE
-                ? sendEncryptedMessagePrompt
-                : sendUnencryptedMessagePrompt
+            ? 'Message ${state.room.displayName}'
             : cantSentMessagePrompt,
         cancelReply: () {
           state.setInteractingEvent(null);
@@ -171,6 +170,83 @@ class ChatView extends StatelessWidget {
             : null,
         processAutofill: (text) =>
             AutofillUtils.search(text, state.room.client, room: state.room),
+      ),
+    );
+  }
+}
+
+class _E2eeBadge extends StatefulWidget {
+  const _E2eeBadge(this.isE2EE);
+  final bool isE2EE;
+
+  @override
+  State<_E2eeBadge> createState() => _E2eeBadgeState();
+}
+
+class _E2eeBadgeState extends State<_E2eeBadge>
+    with SingleTickerProviderStateMixin {
+  bool _hovered = false;
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 180),
+  );
+  late final Animation<double> _fade =
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final e2ee = widget.isE2EE;
+    final color = e2ee ? Colors.green : Colors.grey;
+    final label = e2ee ? 'E2EE Enabled' : 'E2EE Disabled';
+    final bg = Theme.of(context).colorScheme.surfaceContainer.withAlpha(210);
+
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() => _hovered = true);
+        _controller.forward();
+      },
+      onExit: (_) {
+        setState(() => _hovered = false);
+        _controller.reverse();
+      },
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FadeTransition(
+                opacity: _fade,
+                child: SizeTransition(
+                  sizeFactor: _fade,
+                  axis: Axis.horizontal,
+                  axisAlignment: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Text(
+                      label,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(color: color),
+                    ),
+                  ),
+                ),
+              ),
+              Icon(e2ee ? Icons.lock : Icons.lock_open, size: 12, color: color),
+            ],
+          ),
+        ),
       ),
     );
   }

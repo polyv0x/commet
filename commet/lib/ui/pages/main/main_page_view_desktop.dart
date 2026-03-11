@@ -114,14 +114,18 @@ class MainPageViewDesktop extends StatelessWidget {
                       caulkPadRight: Layout.mobile,
                       child: ScaledSafeArea(
                         top: false,
+                        minimum: Layout.mobile
+                            ? const EdgeInsets.only(left: 8)
+                            : EdgeInsets.zero,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             VoiceStatusPanel(state.clientManager.callManager),
                             SizedBox(
-                                height: 55,
+                                height: Layout.userPanelHeight,
                                 child: currentUserPanel(state, context,
-                                    height: 55, avatarRadius: 16)),
+                                    height: Layout.userPanelHeight,
+                                    avatarRadius: 16)),
                           ],
                         ),
                       ),
@@ -261,17 +265,19 @@ class MainPageViewDesktop extends StatelessWidget {
                 _CallMuteButton(
                     state.clientManager.callManager,
                     size: height),
-                SizedBox(
-                    width: 32,
-                    height: 32,
+                Builder(builder: (context) {
+                  final iconSize = IconTheme.of(context).size ?? 24.0;
+                  return SizedBox.square(
+                    dimension: iconSize + 12,
                     child: tiamat.IconButton(
                       icon: Icons.settings,
-                      size: 16,
+                      size: iconSize,
                       onPressed: () {
                         NavigationUtils.navigateTo(
                             context, const AppSettingsPage());
                       },
-                    ))
+                    ));
+                })
               ],
             ),
           )
@@ -540,8 +546,8 @@ class _CallMuteButtonState extends State<_CallMuteButton> {
     final muted = session.isMicrophoneMuted || session.isDeafened;
     final deafened = session.isDeafened;
     final errorColor = Theme.of(context).colorScheme.error;
-    const btnSize = 32.0;
-    const iconSize = 16.0;
+    final iconSize = IconTheme.of(context).size ?? 24.0;
+    final btnSize = iconSize + 12;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

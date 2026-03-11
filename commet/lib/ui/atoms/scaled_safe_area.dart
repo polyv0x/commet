@@ -10,6 +10,7 @@ class ScaledSafeArea extends SafeArea {
     super.top,
     super.left,
     super.right,
+    super.minimum,
   });
 
   @override

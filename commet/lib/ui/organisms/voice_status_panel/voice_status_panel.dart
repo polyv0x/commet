@@ -301,15 +301,18 @@ class _VoiceStatusPanelState extends State<VoiceStatusPanel>
             ),
             // Disconnect button spanning both rows
             Center(
-              child: SizedBox.square(
-                dimension: 32,
-                child: tiamat.IconButton(
-                  icon: Icons.call_end,
-                  iconColor: scheme.error,
-                  size: 16,
-                  onPressed: () => session.hangUpCall(),
-                ),
-              ),
+              child: Builder(builder: (context) {
+                final iconSize = IconTheme.of(context).size ?? 24.0;
+                return SizedBox.square(
+                  dimension: iconSize + 12,
+                  child: tiamat.IconButton(
+                    icon: Icons.call_end,
+                    iconColor: scheme.error,
+                    size: iconSize,
+                    onPressed: () => session.hangUpCall(),
+                  ),
+                );
+              }),
             ),
           ],
         ),
@@ -326,7 +329,7 @@ class _VoiceStatusPanelState extends State<VoiceStatusPanel>
         children: [
           if (session.supportsScreenshare) ...[
             if (!session.isSharingScreen)
-              _actionButton(
+              _actionButton(context,
                 icon: Icons.screen_share_outlined,
                 onPressed: () async {
                   final source = await session.pickScreenCapture(context);
@@ -334,26 +337,24 @@ class _VoiceStatusPanelState extends State<VoiceStatusPanel>
                 },
               ),
             if (session.isSharingScreen)
-              _actionButton(
+              _actionButton(context,
                 icon: Icons.stop_screen_share,
                 onPressed: () => session.stopScreenshare(),
               ),
           ],
           if (session.isCameraEnabled)
-            _actionButton(
+            _actionButton(context,
               icon: Icons.no_photography,
               onPressed: () => session.stopCamera(),
             )
           else
-            _actionButton(
+            _actionButton(context,
               icon: Icons.camera_alt_outlined,
               onPressed: () => session.setCamera(null),
             ),
           if (session.isSharingScreen || session.isCameraEnabled)
-            _actionButton(
-              icon: _showStreamSettings
-                  ? Icons.settings
-                  : Icons.settings_outlined,
+            _actionButton(context,
+              icon: Icons.tune,
               onPressed: () {
                 setState(() => _showStreamSettings = !_showStreamSettings);
                 if (_showStreamSettings) {
@@ -368,12 +369,13 @@ class _VoiceStatusPanelState extends State<VoiceStatusPanel>
     );
   }
 
-  Widget _actionButton({required IconData icon, required VoidCallback onPressed}) {
+  Widget _actionButton(BuildContext context, {required IconData icon, required VoidCallback onPressed}) {
+    final iconSize = IconTheme.of(context).size ?? 24.0;
     return SizedBox.square(
-      dimension: 32,
+      dimension: iconSize + 12,
       child: tiamat.IconButton(
         icon: icon,
-        size: 16,
+        size: iconSize,
         onPressed: onPressed,
       ),
     );

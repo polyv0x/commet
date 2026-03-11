@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:commet/client/components/voip/voip_session.dart';
 import 'package:commet/client/components/voip/voip_stream.dart';
@@ -31,6 +32,7 @@ class VoipStreamView extends StatefulWidget {
 class _VoipStreamViewState extends State<VoipStreamView>
     with TickerProviderStateMixin {
   late Member user;
+  Color? _avatarColor;
 
   late AnimationController audioLevel;
   late List<StreamSubscription> subs;
@@ -51,6 +53,7 @@ class _VoipStreamViewState extends State<VoipStreamView>
 
     audioLevel = AnimationController(
         vsync: this, duration: CallView.volumeAnimationDuration);
+    _loadAvatarColor();
     super.initState();
   }
 
@@ -59,6 +62,41 @@ class _VoipStreamViewState extends State<VoipStreamView>
     audioLevel.stop();
     for (var sub in subs) sub.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadAvatarColor() async {
+    final avatar = user.avatar;
+    if (avatar == null) return;
+    try {
+      final ImageStream stream =
+          avatar.resolve(const ImageConfiguration(size: Size(32, 32)));
+      final completer = Completer<ui.Image>();
+      late ImageStreamListener listener;
+      listener = ImageStreamListener((info, _) {
+        completer.complete(info.image);
+        stream.removeListener(listener);
+      }, onError: (_, __) {
+        stream.removeListener(listener);
+      });
+      stream.addListener(listener);
+      final image = await completer.future;
+      final byteData =
+          await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      if (byteData == null) return;
+      final bytes = byteData.buffer.asUint8List();
+      int r = 0, g = 0, b = 0, count = 0;
+      for (int i = 0; i < bytes.length; i += 4) {
+        final alpha = bytes[i + 3];
+        if (alpha < 128) continue;
+        r += bytes[i];
+        g += bytes[i + 1];
+        b += bytes[i + 2];
+        count++;
+      }
+      if (count == 0) return;
+      final avg = Color.fromARGB(255, r ~/ count, g ~/ count, b ~/ count);
+      if (mounted) setState(() => _avatarColor = avg);
+    } catch (_) {}
   }
 
   void timer() {
@@ -146,13 +184,18 @@ class _VoipStreamViewState extends State<VoipStreamView>
   Widget buildDefault() {
     switch (widget.stream.type) {
       case VoipStreamType.audio:
-        final userColor = HSLColor.fromColor(user.defaultColor)
-            .withLightness(0.12)
-            .withSaturation(0.55)
-            .toColor();
+        final baseHsl = HSLColor.fromColor(
+                _avatarColor ?? user.defaultColor)
+            .withSaturation(0.55);
+        final color1 = baseHsl.withLightness(0.10).toColor();
+        final color2 = baseHsl.withLightness(0.20).toColor();
         return DecoratedBox(
           decoration: BoxDecoration(
-            color: userColor,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [color1, color2],
+            ),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(

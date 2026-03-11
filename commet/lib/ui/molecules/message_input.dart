@@ -69,6 +69,7 @@ class MessageInput extends StatefulWidget {
       this.enabled = true,
       this.editLastMessage,
       this.hintText,
+      this.hintWidget,
       this.attachments,
       this.addAttachment,
       this.onTextUpdated,
@@ -102,6 +103,7 @@ class MessageInput extends StatefulWidget {
   final String? relatedEventBody;
   final String? relatedEventSenderName;
   final String? hintText;
+  final Widget? hintWidget;
   final String? initialText;
   final bool showAttachmentButton;
   final bool compact;
@@ -646,7 +648,8 @@ class MessageInputState extends State<MessageInput> {
 
   @override
   Widget build(BuildContext context) {
-    var padding = const EdgeInsets.fromLTRB(0, 0, 0, 0);
+    var padding = EdgeInsets.symmetric(
+        vertical: Layout.inputButtonVerticalPadding);
 
     return Material(
       color: Colors.transparent,
@@ -721,7 +724,10 @@ class MessageInputState extends State<MessageInput> {
                           ]),
                     ),
                   ),
-                  if (!widget.compact)
+                  if (!widget.compact &&
+                      (senderOverride != null ||
+                          (autoFillResults != null &&
+                              autoFillResults!.isNotEmpty)))
                     SizedBox(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(0, 2, 0, 0),
@@ -960,6 +966,7 @@ class MessageInputState extends State<MessageInput> {
     hintStyle = hintStyle?.copyWith(color: hintStyle.color?.withAlpha(120));
     return Expanded(
       child: Stack(
+        alignment: Alignment.centerLeft,
         children: [
           TapRegion(
             onTapInside: (event) => onTextFocusChanged(),
@@ -980,9 +987,14 @@ class MessageInputState extends State<MessageInput> {
                   border: InputBorder.none,
                   isDense: true,
                   hintStyle: hintStyle,
-                  hintText: widget.hintText),
+                  hintText: widget.hintWidget == null ? widget.hintText : null),
             ),
           ),
+          if (widget.hintWidget != null && controller.text.isEmpty)
+            Padding(
+              padding: EdgeInsets.fromLTRB(8, 0, 4, 0),
+              child: IgnorePointer(child: widget.hintWidget!),
+            ),
         ],
       ),
     );

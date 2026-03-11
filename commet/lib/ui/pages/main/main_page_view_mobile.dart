@@ -224,15 +224,16 @@ class _MainPageViewMobileState extends State<MainPageViewMobile> {
             child: ScaledSafeArea(
               bottom: true,
               top: false,
+              minimum: const EdgeInsets.only(left: 8),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   VoiceStatusPanel(widget.state.clientManager.callManager),
                   SizedBox(
-                    height: 60,
+                    height: Layout.mobileUserPanelHeight,
                     child: MainPageViewDesktop.currentUserPanel(
                         widget.state, context,
-                        height: 60, avatarRadius: 20),
+                        height: Layout.mobileUserPanelHeight, avatarRadius: 20),
                   ),
                 ],
               ),
