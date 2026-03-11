@@ -101,7 +101,9 @@ class Avatar extends StatelessWidget {
       );
     }
 
-    final borderRadius = BorderRadius.circular(radius / 1.25);
+    final color = placeholderColor ?? Colors.transparent;
+    final hsl = HSLColor.fromColor(color);
+    final color2 = hsl.withHue((hsl.hue + 40) % 360).toColor();
 
     final placeholder = SizedBox(
       width: radius * 2,
@@ -109,8 +111,12 @@ class Avatar extends StatelessWidget {
       child: placeholderText != null
           ? DecoratedBox(
               decoration: BoxDecoration(
-                  borderRadius: borderRadius,
-                  color: placeholderColor ?? Colors.transparent,
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [color2, color],
+                  ),
                   border: border),
               child: Align(
                   alignment: Alignment.center,
@@ -139,10 +145,9 @@ class Avatar extends StatelessWidget {
           DecoratedBox(
             decoration: BoxDecoration(
               border: border,
-              borderRadius: borderRadius,
+              shape: BoxShape.circle,
             ),
-            child: ClipRRect(
-              borderRadius: borderRadius,
+            child: ClipOval(
               child: FadeInImage(
                 placeholder: transparentImage.image,
                 fadeInDuration: Durations.short2,

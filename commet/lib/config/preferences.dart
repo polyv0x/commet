@@ -366,6 +366,9 @@ class Preferences {
   StringPreference proxyUrl =
       StringPreference("proxy_url", defaultValue: "proxy.commet.chat");
 
+  NullableStringPreference gifSearchUrl =
+      NullableStringPreference("gif_search_url", defaultValue: null);
+
   StringPreference fallbackTurnServer = StringPreference("fallback_turn_server",
       defaultValue: "stun:turn.matrix.org");
 

@@ -7,6 +7,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:tiamat/tiamat.dart' as tiamat;
 import '../../utils/debounce.dart';
 import '../../client/components/gif/gif_search_result.dart';
+import '../atoms/shimmer_loading.dart';
 
 class GifPicker extends StatefulWidget {
   const GifPicker(
@@ -16,9 +17,8 @@ class GifPicker extends StatefulWidget {
       this.focus,
       this.placeholderText = "Search Gif"});
   final Future<void> Function(GifSearchResult gif)? gifPicked;
-  final Future<List<GifSearchResult>> Function(String query)? search;
+  final Future<GifSearchResponse> Function(String query, {String? pos})? search;
   final FocusNode? focus;
-
   final String placeholderText;
 
   @override
@@ -29,28 +29,46 @@ class _GifPickerState extends State<GifPicker> {
   List<GifSearchResult>? searchResult;
   bool searching = false;
   bool sending = false;
+  bool loadingMore = false;
+  bool hasMore = false;
+  String? nextCursor;
 
   final TextEditingController _textController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   Debouncer debouce = Debouncer(delay: const Duration(milliseconds: 500));
 
   @override
   void initState() {
     _textController.addListener(onTextChanged);
+    _scrollController.addListener(_onScroll);
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 1500) {
+      loadMore();
+    }
   }
 
   String prevText = "";
   void onTextChanged() {
-    if (_textController.text == prevText) {
-      return;
-    }
-
+    if (_textController.text == prevText) return;
     prevText = _textController.text;
 
     if (_textController.text.isNotEmpty) {
       setState(() {
         searching = true;
         searchResult = null;
+        nextCursor = null;
+        hasMore = false;
       });
       debouce.run(() => doSearch(_textController.text));
     } else {
@@ -66,10 +84,51 @@ class _GifPickerState extends State<GifPicker> {
       searching = true;
     });
 
-    widget.search?.call(query).then((value) {
+    widget.search?.call(query).then((response) {
+      if (!mounted) return;
       setState(() {
-        searchResult = value;
+        searchResult = response.results;
+        nextCursor = response.next;
+        hasMore = response.next != null && response.next!.isNotEmpty;
       });
+    }).catchError((_) {
+      if (!mounted) return;
+      setState(() {
+        searchResult = [];
+        hasMore = false;
+      });
+    });
+  }
+
+  void loadMore() {
+    if (loadingMore || !hasMore) return;
+    final query = _textController.text;
+    if (query.isEmpty) return;
+
+    setState(() {
+      loadingMore = true;
+    });
+
+    widget.search?.call(query, pos: nextCursor).then((response) {
+      if (!mounted) return;
+      setState(() {
+        searchResult = [...searchResult!, ...response.results];
+        nextCursor = response.next;
+        hasMore = response.next != null && response.next!.isNotEmpty;
+        loadingMore = false;
+      });
+    }).catchError((_) {
+      if (!mounted) return;
+      setState(() {
+        loadingMore = false;
+      });
+    });
+  }
+
+  void removeResult(GifSearchResult result) {
+    if (!mounted) return;
+    setState(() {
+      searchResult?.remove(result);
     });
   }
 
@@ -132,46 +191,48 @@ class _GifPickerState extends State<GifPicker> {
       return const Expanded(child: SizedBox());
     }
 
-    if (searchResult == null)
+    if (searchResult == null) {
       return const Expanded(
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: Center(child: CircularProgressIndicator()),
       );
+    }
 
     return Expanded(
-        child: Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: MasonryGridView.extent(
-        maxCrossAxisExtent: 300,
-        mainAxisSpacing: 8,
-        padding: EdgeInsetsGeometry.all(0),
-        crossAxisSpacing: 8,
-        itemCount: searchResult!.length,
-        itemBuilder: (context, index) {
-          var result = searchResult!.elementAt(index);
-          return MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: () => sendGif(result),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: AspectRatio(
-                  aspectRatio: result.x / result.y,
-                  child: SizedBox(
-                    child: Image(
-                      fit: BoxFit.fill,
-                      filterQuality: FilterQuality.medium,
-                      image: NetworkImage(result.previewUrl.toString()),
-                    ),
-                  ),
-                ),
+      child: Column(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: MasonryGridView.extent(
+                controller: _scrollController,
+                maxCrossAxisExtent: 300,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                itemCount: searchResult!.length,
+                itemBuilder: (context, index) {
+                  final result = searchResult![index];
+                  return _GifGridItem(
+                    key: ValueKey(result.fullResUrl),
+                    result: result,
+                    onTap: () => sendGif(result),
+                    onError: () => removeResult(result),
+                  );
+                },
               ),
             ),
-          );
-        },
+          ),
+          if (loadingMore)
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: SizedBox(
+                height: 32,
+                width: 32,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+        ],
       ),
-    ));
+    );
   }
 
   void sendGif(GifSearchResult gif) {
@@ -179,8 +240,78 @@ class _GifPickerState extends State<GifPicker> {
       sending = true;
     });
 
-    widget.gifPicked?.call(gif).then((value) => setState(() {
+    widget.gifPicked?.call(gif).then((_) => setState(() {
           sending = false;
         }));
+  }
+}
+
+class _GifGridItem extends StatefulWidget {
+  const _GifGridItem({
+    required this.result,
+    required this.onTap,
+    required this.onError,
+    super.key,
+  });
+
+  final GifSearchResult result;
+  final VoidCallback onTap;
+  final VoidCallback onError;
+
+  @override
+  State<_GifGridItem> createState() => _GifGridItemState();
+}
+
+class _GifGridItemState extends State<_GifGridItem> {
+  bool isLoading = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: AspectRatio(
+            aspectRatio: widget.result.x / widget.result.y,
+            child: Shimmer(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ShimmerLoading(
+                    isLoading: isLoading,
+                    child: Container(
+                      color: Theme.of(context).colorScheme.surfaceContainerLow,
+                    ),
+                  ),
+                  Image(
+                    fit: BoxFit.fill,
+                    filterQuality: FilterQuality.medium,
+                    image: NetworkImage(widget.result.fullResUrl.toString()),
+                    frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                      if (frame != null) {
+                        if (isLoading) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) setState(() => isLoading = false);
+                          });
+                        }
+                        return child;
+                      }
+                      return const SizedBox.shrink();
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      WidgetsBinding.instance
+                          .addPostFrameCallback((_) => widget.onError());
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

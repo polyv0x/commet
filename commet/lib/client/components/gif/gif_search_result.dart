@@ -8,3 +8,13 @@ class GifSearchResult {
   GifSearchResult(
       this.previewUrl, this.fullResUrl, this.x, this.y, this.mimeType);
 }
+
+class GifSearchResponse {
+  final List<GifSearchResult> results;
+
+  /// Opaque cursor to pass as `pos` in the next request.
+  /// Null or empty means no more results.
+  final String? next;
+
+  GifSearchResponse(this.results, this.next);
+}

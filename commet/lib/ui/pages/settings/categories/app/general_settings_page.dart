@@ -16,6 +16,13 @@ class GeneralSettingsPage extends StatefulWidget {
 }
 
 class GeneralSettingsPageState extends State<GeneralSettingsPage> {
+  late TextEditingController _gifSearchUrlController;
+
+  @override
+  void dispose() {
+    _gifSearchUrlController.dispose();
+    super.dispose();
+  }
   String get labelThirdPartyServicesTitle =>
       Intl.message("Third party services",
           desc: "Header for the third party services section in settings",
@@ -103,6 +110,8 @@ class GeneralSettingsPageState extends State<GeneralSettingsPage> {
 
   @override
   void initState() {
+    _gifSearchUrlController = TextEditingController(
+        text: preferences.gifSearchUrl.value ?? "");
     super.initState();
   }
 
@@ -119,6 +128,23 @@ class GeneralSettingsPageState extends State<GeneralSettingsPage> {
               title: labelGifSearchToggle,
               description:
                   labelGifSearchDescription(preferences.proxyUrl.value),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextInput(
+                    label: "Custom GIF Search URL",
+                    placeholder: "https://example.com",
+                    controller: _gifSearchUrlController,
+                    onChanged: (value) {
+                      preferences.gifSearchUrl.set(
+                          value.isEmpty ? null : value);
+                    },
+                  ),
+                ],
+              ),
             ),
             const SizedBox(
               height: 10,

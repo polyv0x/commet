@@ -21,28 +21,58 @@ class MatrixGifComponent implements GifComponent<MatrixClient, MatrixRoom> {
   MatrixGifComponent(this.client, this.room);
 
   @override
-  String get searchPlaceholder => "Search Tenor";
+  String get searchPlaceholder {
+    if (preferences.gifSearchUrl.value != null) return "Search GIFs";
+    return "Search Tenor";
+  }
 
   @override
-  Future<List<GifSearchResult>> search(String query) async {
+  Future<GifSearchResponse> search(String query, {String? pos}) async {
+    final customUrl = preferences.gifSearchUrl.value;
+
+    if (customUrl != null && customUrl.isNotEmpty) {
+      var params = <String, String>{"q": query};
+      if (pos != null && pos.isNotEmpty) params["pos"] = pos;
+
+      var uri = Uri.parse("${customUrl.trimRight()}/api/v2/search")
+          .replace(queryParameters: params);
+
+      var result = await http.get(uri);
+      if (result.statusCode == 200) {
+        var data = jsonDecode(result.body) as Map<String, dynamic>;
+        var results = (data['results'] as List?)
+                ?.map((e) => parseTenorResult(e, useProxy: false))
+                .toList() ??
+            [];
+        var next = data['next'] as String?;
+        return GifSearchResponse(results, next);
+      }
+      return GifSearchResponse([], null);
+    }
+
     // The ui should never actually let the user search if this is disabled, so this *shouldn't* be neccessary
     // but just to be safe!
-    if (!preferences.tenorGifSearchEnabled.value) return [];
+    if (!preferences.tenorGifSearchEnabled.value)
+      return GifSearchResponse([], null);
+
+    var params = <String, String>{"q": query};
+    if (pos != null && pos.isNotEmpty) params["pos"] = pos;
 
     var uri = Uri.https(
-        preferences.proxyUrl.value, "/proxy/tenor/api/v2/search", {"q": query});
+        preferences.proxyUrl.value, "/proxy/tenor/api/v2/search", params);
 
     var result = await http.get(uri);
     if (result.statusCode == 200) {
       var data = jsonDecode(result.body) as Map<String, dynamic>;
-      var results = data['results'] as List?;
-
-      if (results != null) {
-        return results.map((e) => parseTenorResult(e)).toList();
-      }
+      var results = (data['results'] as List?)
+              ?.map((e) => parseTenorResult(e))
+              .toList() ??
+          [];
+      var next = data['next'] as String?;
+      return GifSearchResponse(results, next);
     }
 
-    return [];
+    return GifSearchResponse([], null);
   }
 
   @override
@@ -91,7 +121,8 @@ class MatrixGifComponent implements GifComponent<MatrixClient, MatrixRoom> {
     return null;
   }
 
-  GifSearchResult parseTenorResult(Map<String, dynamic> result) {
+  GifSearchResult parseTenorResult(Map<String, dynamic> result,
+      {bool useProxy = true}) {
     const int sizeLimit = 3000000; //3 MB
 
     var formats = result['media_formats'] as Map<String, dynamic>;
@@ -120,8 +151,8 @@ class MatrixGifComponent implements GifComponent<MatrixClient, MatrixRoom> {
     List<dynamic> dimensions = fullRes['dims']! as List<dynamic>;
 
     return GifSearchResult(
-        convertUrl(preview['url']),
-        convertUrl(fullRes['url']),
+        useProxy ? convertUrl(preview['url']) : Uri.parse(preview['url']),
+        useProxy ? convertUrl(fullRes['url']) : Uri.parse(fullRes['url']),
         (dimensions[0] as int).roundToDouble(),
         (dimensions[1] as int).roundToDouble(),
         mimeType);

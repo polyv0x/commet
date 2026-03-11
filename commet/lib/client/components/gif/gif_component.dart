@@ -5,7 +5,7 @@ import 'package:commet/client/timeline_events/timeline_event.dart';
 
 abstract class GifComponent<R extends Client, T extends Room>
     implements RoomComponent<R, T> {
-  Future<List<GifSearchResult>> search(String query);
+  Future<GifSearchResponse> search(String query, {String? pos});
 
   Future<TimelineEvent?> sendGif(GifSearchResult gif, TimelineEvent? inReplyTo);
 
