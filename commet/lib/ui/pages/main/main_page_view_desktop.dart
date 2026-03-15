@@ -514,7 +514,7 @@ class _CallMuteButtonState extends State<_CallMuteButton> {
   StreamSubscription? _sessionSub;
 
   VoipSession? get _session => widget.callManager.currentSessions
-      .where((s) => s.state == VoipState.connected)
+      .where((s) => s.state != VoipState.ended)
       .firstOrNull;
 
   @override
@@ -544,10 +544,14 @@ class _CallMuteButtonState extends State<_CallMuteButton> {
   @override
   Widget build(BuildContext context) {
     final session = _session;
-    if (session == null) return const SizedBox.shrink();
-
-    final muted = session.isMicrophoneMuted || session.isDeafened;
-    final deafened = session.isDeafened;
+    final useSessionState =
+        session != null && session.state != VoipState.connecting;
+    final muted = useSessionState
+        ? (session!.isMicrophoneMuted || session.isDeafened)
+        : widget.callManager.isMuted;
+    final deafened = useSessionState
+        ? session!.isDeafened
+        : widget.callManager.isDeafened;
     final errorColor = Theme.of(context).colorScheme.error;
     final iconSize = IconTheme.of(context).size ?? 24.0;
     final btnSize = iconSize + 12;
@@ -563,13 +567,20 @@ class _CallMuteButtonState extends State<_CallMuteButton> {
             iconColor: muted ? errorColor : null,
             size: iconSize,
             onPressed: () async {
-              if (deafened) {
-                // Un-deafen first
-                await session.setDeafened(false);
+              if (session != null) {
+                if (deafened) {
+                  await session.setDeafened(false);
+                  widget.callManager.isDeafened = false;
+                  widget.callManager.isMuted = false;
+                  clientManager?.callManager.playUnmuteSound();
+                } else {
+                  if (!muted) clientManager?.callManager.playMuteSound();
+                  else clientManager?.callManager.playUnmuteSound();
+                  await session.setMicrophoneMute(!muted);
+                  widget.callManager.isMuted = !muted;
+                }
               } else {
-                if (!muted) clientManager?.callManager.playMuteSound();
-                else clientManager?.callManager.playUnmuteSound();
-                await session.setMicrophoneMute(!muted);
+                clientManager?.callManager.toggleMute();
               }
               setState(() {});
             },
@@ -583,7 +594,13 @@ class _CallMuteButtonState extends State<_CallMuteButton> {
             iconColor: deafened ? errorColor : null,
             size: iconSize,
             onPressed: () async {
-              await session.setDeafened(!deafened);
+              if (session != null) {
+                await session.setDeafened(!deafened);
+                widget.callManager.isDeafened = session.isDeafened;
+                widget.callManager.isMuted = session.isMicrophoneMuted || session.isDeafened;
+              } else {
+                await widget.callManager.toggleDeafened();
+              }
               setState(() {});
             },
           ),

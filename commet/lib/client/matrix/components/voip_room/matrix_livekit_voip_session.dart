@@ -29,7 +29,9 @@ class MatrixLivekitVoipSession implements VoipSession {
   final StreamController<void> _onParticipantsChanged =
       StreamController.broadcast();
 
-  MatrixLivekitVoipSession(this.room, this.livekitRoom) {
+  MatrixLivekitVoipSession(this.room, this.livekitRoom,
+      {VoipState initialState = VoipState.connected}) {
+    state = initialState;
     clientManager?.callManager.onClientSessionStarted(this);
     addInitialStreams();
 
@@ -49,7 +51,25 @@ class MatrixLivekitVoipSession implements VoipSession {
       _onVolumeChanged.add(());
     });
 
-    startHeartbeat();
+    if (initialState == VoipState.connected) {
+      startHeartbeat();
+    }
+  }
+
+  /// Called by the backend once the LiveKit connection is fully established.
+  Future<void> completeConnection() async {
+    state = VoipState.connected;
+    _stateChanged.add(());
+    _onConnectionChanged.add(state);
+    await startHeartbeat();
+  }
+
+  /// Called by the backend when background connection fails.
+  void failConnection() {
+    state = VoipState.ended;
+    _stateChanged.add(());
+    _onConnectionChanged.add(state);
+    clientManager?.callManager.onSessionEnded(this);
   }
 
   StreamController _stateChanged = StreamController.broadcast();
@@ -186,7 +206,7 @@ class MatrixLivekitVoipSession implements VoipSession {
   Client get client => room.client;
 
   @override
-  VoipState state = VoipState.connected;
+  VoipState state = VoipState.connecting;
 
   @override
   Future<void> declineCall() {
@@ -214,8 +234,10 @@ class MatrixLivekitVoipSession implements VoipSession {
   bool get isCameraEnabled =>
       livekitRoom.localParticipant?.isCameraEnabled() ?? false;
 
+  bool _isMicrophoneMuted = false;
+
   @override
-  bool get isMicrophoneMuted => livekitRoom.localParticipant?.isMuted ?? false;
+  bool get isMicrophoneMuted => _isMicrophoneMuted;
 
   bool _isDeafened = false;
 
@@ -249,6 +271,7 @@ class MatrixLivekitVoipSession implements VoipSession {
 
   @override
   Future<void> setMicrophoneMute(bool state) async {
+    _isMicrophoneMuted = state;
     await livekitRoom.localParticipant?.setMicrophoneEnabled(!state);
     _stateChanged.add(());
   }

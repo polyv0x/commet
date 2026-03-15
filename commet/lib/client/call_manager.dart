@@ -65,6 +65,11 @@ class CallManager {
   // before either session appears in currentSessions.
   bool _joiningInProgress = false;
 
+  // Set to true when hanging up an existing session in order to join a new one.
+  // Suppresses the standalone end-call sound so the switch sound sequence can
+  // play leave → join in order instead.
+  bool _switchingChannel = false;
+
   void onClientSessionStarted(VoipSession event) {
     _joiningInProgress = false;
     var room = event.client.getRoom(event.roomId);
@@ -99,8 +104,14 @@ class CallManager {
       startOutgoingTone();
     }
 
-    if (event.state == VoipState.connected) {
-      joinCallSound();
+    if (event.state == VoipState.connected ||
+        event.state == VoipState.connecting) {
+      if (_switchingChannel) {
+        _switchingChannel = false;
+        switchChannelSound();
+      } else {
+        joinCallSound();
+      }
     }
 
     event.onConnectionStateChanged.listen((_) => onCallStateChanged(event));
@@ -116,7 +127,9 @@ class CallManager {
       stopRingtone();
     }
 
-    endCallSound();
+    if (!_switchingChannel) {
+      endCallSound();
+    }
   }
 
   /// Ensures at most one voice session is active. Call this before joining any
@@ -137,6 +150,7 @@ class CallManager {
     final existing = active.first;
 
     if (_sameVoiceContext(existing, targetRoomId, targetClient)) {
+      _switchingChannel = true;
       await existing.hangUpCall();
       return true;
     }
@@ -151,6 +165,7 @@ class CallManager {
     );
 
     if (confirmed == true) {
+      _switchingChannel = true;
       await existing.hangUpCall();
       return true;
     }
@@ -211,33 +226,49 @@ class CallManager {
     player?.setPlaylistMode(PlaylistMode.none);
   }
 
+  void switchChannelSound() {
+    player = getSoundPlayer();
+    player?.open(Playlist([
+      Media("asset:///assets/sound/left_call.ogg"),
+      Media("asset:///assets/sound/joined_call.ogg"),
+    ]));
+    player?.setPlaylistMode(PlaylistMode.none);
+  }
+
+  bool isMuted = false;
+  bool isDeafened = false;
+
   void mute() {
+    isMuted = true;
     for (var session in currentSessions) {
       session.setMicrophoneMute(true);
     }
-
     playMuteSound();
   }
 
-  bool fakeToggle = false;
   void toggleMute() {
-    var session = currentSessions.firstOrNull;
-
-    if (session != null) {
-      if (session.isMicrophoneMuted) {
-        unmute();
-      } else {
-        mute();
-      }
+    if (isMuted || isDeafened) {
+      unmute();
     } else {
-      fakeToggle = !fakeToggle;
+      mute();
+    }
+  }
 
-      // just to give user feedback when not in a call
-      if (fakeToggle) {
-        playMuteSound();
-      } else {
-        playUnmuteSound();
+  Future<void> toggleDeafened() async {
+    if (isDeafened) {
+      isDeafened = false;
+      isMuted = false;
+      for (var session in currentSessions) {
+        await session.setDeafened(false);
       }
+      playUnmuteSound();
+    } else {
+      isDeafened = true;
+      isMuted = true;
+      for (var session in currentSessions) {
+        await session.setDeafened(true);
+      }
+      playMuteSound();
     }
   }
 
@@ -254,10 +285,12 @@ class CallManager {
   }
 
   void unmute() {
+    isMuted = false;
+    isDeafened = false;
     for (var session in currentSessions) {
+      if (session.isDeafened) session.setDeafened(false);
       session.setMicrophoneMute(false);
     }
-
     playUnmuteSound();
   }
 
@@ -289,10 +322,6 @@ class CallManager {
     if (event.state == VoipState.connected ||
         event.state == VoipState.connecting) {
       stopRingtone();
-    }
-
-    if (event.state == VoipState.connected) {
-      joinCallSound();
     }
   }
 

@@ -3,10 +3,8 @@ import 'dart:async';
 import 'package:commet/client/components/voip/voip_session.dart';
 import 'package:commet/client/components/voip_room/voip_room_component.dart';
 import 'package:commet/config/build_config.dart';
-import 'package:commet/debug/log.dart';
 import 'package:commet/ui/atoms/shader/metaballs_background.dart';
 import 'package:commet/ui/atoms/shimmer_loading.dart';
-import 'package:commet/ui/navigation/adaptive_dialog.dart';
 import 'package:commet/ui/organisms/call_view/call.dart';
 import 'package:commet/main.dart';
 import 'package:commet/utils/common_strings.dart';
@@ -27,6 +25,7 @@ class _VoipRoomViewState extends State<VoipRoomView> {
   late List<String> participants;
   bool joining = false;
   StreamSubscription? sub;
+  StreamSubscription? _sessionStateSub;
 
   @override
   void initState() {
@@ -57,6 +56,7 @@ class _VoipRoomViewState extends State<VoipRoomView> {
   @override
   void dispose() {
     sub?.cancel();
+    _sessionStateSub?.cancel();
     super.dispose();
   }
 
@@ -284,14 +284,17 @@ class _VoipRoomViewState extends State<VoipRoomView> {
 
     setState(() => joining = true);
 
-    try {
-      final session = await widget.voip.joinCall();
-      if (session != null) {
-        setState(() => currentSession = session);
-      }
-    } catch (e, s) {
-      Log.onError(e, s);
-      AdaptiveDialog.showError(context, e, s);
+    final session = await widget.voip.joinCall();
+    if (session != null) {
+      _sessionStateSub?.cancel();
+      _sessionStateSub = session.onStateChanged.listen((_) {
+        if (mounted) setState(() {});
+      });
+      setState(() {
+        currentSession = session;
+        joining = false;
+      });
+    } else {
       setState(() => joining = false);
     }
   }

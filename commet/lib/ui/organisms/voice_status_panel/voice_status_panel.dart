@@ -170,8 +170,8 @@ class _VoiceStatusPanelState extends State<VoiceStatusPanel>
             builder: (context, _, __) =>
                 _statusHeader(context, session, roomLabel, connected),
           ),
-          if (connected) _actionButtons(context, session),
-          if (connected && (session.isSharingScreen || session.isCameraEnabled))
+          _actionButtons(context, session),
+          if (session.isSharingScreen || session.isCameraEnabled)
             SizeTransition(
               sizeFactor: _settingsAnimation,
               axisAlignment: -1.0,

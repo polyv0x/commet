@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:commet/client/components/calendar_room/calendar_room_component.dart';
 import 'package:commet/client/components/voip/voip_session.dart';
+import 'package:commet/client/components/voip/voip_stream.dart';
 import 'package:commet/client/components/voip_room/voip_room_component.dart';
 import 'package:commet/client/room.dart';
 import 'package:commet/main.dart';
@@ -36,6 +37,9 @@ class _RoomTextButtonState extends State<RoomTextButton> {
   CalendarRoom? calendarRoom;
   List<String>? voipRoomParticipants;
   List<MatrixCalendarEventState>? calendarEvents;
+  List<StreamSubscription> _volumeSubs = [];
+  Map<String, double> _audioLevels = {};
+  Set<String> _subscribedStreamIds = {};
 
   @override
   void initState() {
@@ -61,13 +65,12 @@ class _RoomTextButtonState extends State<RoomTextButton> {
     if (voipRoomParticipants?.isNotEmpty == true) {
       for (var participant in voipRoomParticipants!) {
         widget.room.fetchMember(participant).then((_) {
-          if (mounted) {
-            setState(() {});
-          }
+          if (mounted) setState(() {});
         });
       }
     }
 
+    _bindVolumeSubscription();
     super.initState();
   }
 
@@ -76,6 +79,7 @@ class _RoomTextButtonState extends State<RoomTextButton> {
     for (var sub in subs) {
       sub.cancel();
     }
+    for (var sub in _volumeSubs) sub.cancel();
     super.dispose();
   }
 
@@ -258,21 +262,65 @@ class _RoomTextButtonState extends State<RoomTextButton> {
   }
 
   Widget buildCallMember(String identifier) {
-    var color = Theme.of(context).colorScheme.secondary;
-
     final member = voipRoom?.room.getMemberOrFallback(identifier);
-    if (member == null) {
-      return Placeholder();
-    }
+    if (member == null) return const SizedBox.shrink();
+
+    final session = voipRoom?.currentSession;
+    final audioLevel = _audioLevels[identifier] ?? 0.0;
+    final isSpeaking = audioLevel > 0;
+    final isLocal = identifier == widget.room.client.self?.identifier;
+    final isMuted = isLocal &&
+        (session?.isMicrophoneMuted == true || session?.isDeafened == true);
+    final talking = isSpeaking && !isMuted;
+
+    final nameColor = talking
+        ? Colors.white
+        : Theme.of(context).colorScheme.secondary;
 
     return SizedBox(
       height: height,
-      child: tiamat.TextButton(
-        member.displayName,
-        textColor: color,
-        avatar: member.avatar,
-        avatarPlaceholderColor: member.defaultColor,
-        avatarPlaceholderText: member.displayName,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+        child: Row(
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: talking
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                tiamat.Avatar(
+                  radius: 12,
+                  image: member.avatar,
+                  placeholderColor: member.defaultColor,
+                  placeholderText: member.displayName,
+                ),
+              ],
+            ),
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 0, 0),
+                child: Text(
+                  member.displayName,
+                  style: TextStyle(color: nameColor, fontSize: 13),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -311,5 +359,35 @@ class _RoomTextButtonState extends State<RoomTextButton> {
     setState(() {
       voipRoomParticipants = voipRoom?.getCurrentParticipants();
     });
+    _bindVolumeSubscription();
+  }
+
+  void _bindVolumeSubscription() {
+    for (var sub in _volumeSubs) sub.cancel();
+    _volumeSubs = [];
+    _subscribedStreamIds = {};
+
+    final session = voipRoom?.currentSession;
+    if (session == null || session.state == VoipState.ended) {
+      if (_audioLevels.isNotEmpty) setState(() => _audioLevels = {});
+      return;
+    }
+
+    void updateLevels() {
+      final levels = <String, double>{};
+      for (final stream in session.streams) {
+        if (stream.type == VoipStreamType.audio) {
+          levels[stream.streamUserId] = stream.audiolevel;
+          if (!_subscribedStreamIds.contains(stream.streamId)) {
+            _subscribedStreamIds.add(stream.streamId);
+            _volumeSubs.add(stream.onAudioLevelChanged.listen((_) => updateLevels()));
+          }
+        }
+      }
+      if (mounted) setState(() => _audioLevels = levels);
+    }
+
+    _volumeSubs.add(session.onUpdateVolumeVisualizers.listen((_) => updateLevels()));
+    updateLevels();
   }
 }

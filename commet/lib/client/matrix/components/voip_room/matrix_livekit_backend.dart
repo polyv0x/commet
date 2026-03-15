@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:commet/client/components/voip/voip_session.dart';
+import 'package:commet/main.dart';
 import 'package:commet/client/components/voip/webrtc_default_devices.dart';
 import 'package:commet/client/matrix/components/voip_room/matrix_livekit_voip_session.dart';
 import 'package:commet/client/matrix/components/voip_room/matrix_voip_room_component.dart';
@@ -97,109 +98,134 @@ class MatrixLivekitBackend {
     return null;
   }
 
-  Future<VoipSession?> join() async {
+  /// Returns a session immediately in [VoipState.connecting] state and
+  /// completes the LiveKit handshake in the background.
+  Future<VoipSession> join() async {
     WebrtcDefaultDevices.selectOutputDevice();
 
-    final fociUrl = await getFociUrl();
+    final lkRoom = lk.Room(
+        roomOptions: lk.RoomOptions(adaptiveStream: true, dynacast: true));
 
-    if (fociUrl.isEmpty) {
-      throw Exception("Failed to find a valid LiveKit service");
-    }
+    final session = MatrixLivekitVoipSession(room, lkRoom,
+        initialState: VoipState.connecting);
 
-    final selectedFocus = fociUrl.first;
-    Log.d("Got Foci Url: ${fociUrl}");
+    _connectInBackground(session, lkRoom);
 
-    final token = await room.matrixRoom.client
-        .requestOpenIdToken(room.matrixRoom.client.userID!, {});
+    return session;
+  }
 
-    if (selectedFocus.scheme != "https") {
-      throw Exception("Selected focus JWT does not use HTTPS");
-    }
+  Future<void> _connectInBackground(
+      MatrixLivekitVoipSession session, lk.Room lkRoom) async {
+    try {
+      final fociUrl = await getFociUrl();
 
-    Log.d("Received token from homeserver: ${token}");
-    final uri = Uri.parse(selectedFocus.toString() + "/sfu/get");
-
-    final body = {
-      "device_id": room.matrixRoom.client.deviceID!,
-      "room": room.matrixRoom.id,
-      "openid_token": {
-        "matrix_server_name": token.matrixServerName,
-        "access_token": token.accessToken,
-        "expires_in": token.expiresIn,
+      if (fociUrl.isEmpty) {
+        throw Exception("Failed to find a valid LiveKit service");
       }
-    };
 
-    var result = await http.post(uri, body: jsonEncode(body));
-    if (result.statusCode != 200) {
-      throw Exception("Failed to get sfu! HTTP Error ${result.statusCode}");
-    }
+      final selectedFocus = fociUrl.first;
+      Log.d("Got Foci Url: ${fociUrl}");
 
-    var data = jsonDecode(result.body) as Map<String, dynamic>;
+      final token = await room.matrixRoom.client
+          .requestOpenIdToken(room.matrixRoom.client.userID!, {});
 
-    final sfuUrl = data["url"];
-    Log.d("Got sfu: ${sfuUrl}");
-    final jwt = data["jwt"];
-
-    final roomOptions = lk.RoomOptions(
-      adaptiveStream: true,
-      dynacast: true,
-    );
-
-    final lkRoom = lk.Room(roomOptions: roomOptions);
-    await lkRoom.prepareConnection(sfuUrl, jwt);
-    final stateKey =
-        "_${room.client.self!.identifier}_${room.matrixRoom.client.deviceID!}_m.call";
-
-    // Clear this device's membership from every other voice channel before
-    // joining this one, so the user cannot appear in two rooms simultaneously.
-    for (final otherRoom in room.matrixRoom.client.rooms) {
-      if (otherRoom.id == room.matrixRoom.id) continue;
-      final states =
-          otherRoom.states[MatrixVoipRoomComponent.callMemberStateEvent];
-      if (states == null) continue;
-      final existing = states[stateKey];
-      if (existing == null || existing.content.isEmpty) continue;
-      try {
-        await room.matrixRoom.client.setRoomStateWithKey(
-            otherRoom.id,
-            MatrixVoipRoomComponent.callMemberStateEvent,
-            stateKey,
-            {});
-      } catch (e) {
-        Log.e("Failed to clear stale membership in ${otherRoom.id}: $e");
+      if (selectedFocus.scheme != "https") {
+        throw Exception("Selected focus JWT does not use HTTPS");
       }
+
+      Log.d("Received token from homeserver: ${token}");
+      final uri = Uri.parse(selectedFocus.toString() + "/sfu/get");
+
+      final body = {
+        "device_id": room.matrixRoom.client.deviceID!,
+        "room": room.matrixRoom.id,
+        "openid_token": {
+          "matrix_server_name": token.matrixServerName,
+          "access_token": token.accessToken,
+          "expires_in": token.expiresIn,
+        }
+      };
+
+      var result = await http.post(uri, body: jsonEncode(body));
+      if (result.statusCode != 200) {
+        throw Exception("Failed to get sfu! HTTP Error ${result.statusCode}");
+      }
+
+      var data = jsonDecode(result.body) as Map<String, dynamic>;
+
+      final sfuUrl = data["url"];
+      Log.d("Got sfu: ${sfuUrl}");
+      final jwt = data["jwt"];
+
+      await lkRoom.prepareConnection(sfuUrl, jwt);
+      final stateKey =
+          "_${room.client.self!.identifier}_${room.matrixRoom.client.deviceID!}_m.call";
+
+      // Clear this device's membership from every other voice channel before
+      // joining this one, so the user cannot appear in two rooms simultaneously.
+      for (final otherRoom in room.matrixRoom.client.rooms) {
+        if (otherRoom.id == room.matrixRoom.id) continue;
+        final states =
+            otherRoom.states[MatrixVoipRoomComponent.callMemberStateEvent];
+        if (states == null) continue;
+        final existing = states[stateKey];
+        if (existing == null || existing.content.isEmpty) continue;
+        try {
+          await room.matrixRoom.client.setRoomStateWithKey(
+              otherRoom.id,
+              MatrixVoipRoomComponent.callMemberStateEvent,
+              stateKey,
+              {});
+        } catch (e) {
+          Log.e("Failed to clear stale membership in ${otherRoom.id}: $e");
+        }
+      }
+
+      await room.matrixRoom.client.setRoomStateWithKey(room.matrixRoom.id,
+          MatrixVoipRoomComponent.callMemberStateEvent, stateKey, {
+        "application": "m.call",
+        "call_id": "",
+        "device_id": room.matrixRoom.client.deviceID!,
+        "expires": 120000,
+        "created_ts": DateTime.now().millisecondsSinceEpoch,
+        "foci_preferred": fociUrl
+            .map((e) => {
+                  "type": "livekit",
+                  "livekit_alias": room.identifier,
+                  "livekit_service_url": e.toString()
+                })
+            .toList(),
+        "focus_active": {
+          "focus_selection": "oldest_membership",
+          "type": "livekit"
+        },
+        "scope": "m.room"
+      });
+
+      await lkRoom.connect(sfuUrl, jwt);
+
+      var device = await WebrtcDefaultDevices.getDefaultMicrophoneId();
+      print("Using default device: ${device}");
+      await lkRoom.localParticipant?.setMicrophoneEnabled(true,
+          audioCaptureOptions: lk.AudioCaptureOptions(deviceId: device));
+
+      livekitRoom = lkRoom;
+
+      // Apply pre-call mute/deafen before transitioning to connected so the
+      // UI never briefly shows the wrong state.
+      final mgr = clientManager?.callManager;
+      if (mgr != null) {
+        if (mgr.isDeafened) {
+          await session.setDeafened(true);
+        } else if (mgr.isMuted) {
+          await session.setMicrophoneMute(true);
+        }
+      }
+
+      await session.completeConnection();
+    } catch (e, s) {
+      Log.onError(e, s);
+      session.failConnection();
     }
-
-    await room.matrixRoom.client.setRoomStateWithKey(room.matrixRoom.id,
-        MatrixVoipRoomComponent.callMemberStateEvent, stateKey, {
-      "application": "m.call",
-      "call_id": "",
-      "device_id": room.matrixRoom.client.deviceID!,
-      "expires": 120000,
-      "created_ts": DateTime.now().millisecondsSinceEpoch,
-      "foci_preferred": fociUrl
-          .map((e) => {
-                "type": "livekit",
-                "livekit_alias": room.identifier,
-                "livekit_service_url": e.toString()
-              })
-          .toList(),
-      "focus_active": {
-        "focus_selection": "oldest_membership",
-        "type": "livekit"
-      },
-      "scope": "m.room"
-    });
-
-    await lkRoom.connect(sfuUrl, jwt);
-
-    var device = await WebrtcDefaultDevices.getDefaultMicrophoneId();
-
-    print("Using default device: ${device}");
-    await lkRoom.localParticipant?.setMicrophoneEnabled(true,
-        audioCaptureOptions: lk.AudioCaptureOptions(deviceId: device));
-
-    livekitRoom = lkRoom;
-    return MatrixLivekitVoipSession(room, lkRoom);
   }
 }
