@@ -120,7 +120,10 @@ class MainPageViewDesktop extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            VoiceStatusPanel(state.clientManager.callManager),
+                            RepaintBoundary(
+                              child: VoiceStatusPanel(
+                                  state.clientManager.callManager),
+                            ),
                             SizedBox(
                                 height: Layout.userPanelHeight,
                                 child: currentUserPanel(state, context,

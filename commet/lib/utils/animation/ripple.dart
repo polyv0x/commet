@@ -154,5 +154,8 @@ class CirclePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CirclePainter oldDelegate) => true;
+  bool shouldRepaint(CirclePainter oldDelegate) =>
+      animation?.value != oldDelegate.animation?.value ||
+      color != oldDelegate.color ||
+      minRadius != oldDelegate.minRadius;
 }

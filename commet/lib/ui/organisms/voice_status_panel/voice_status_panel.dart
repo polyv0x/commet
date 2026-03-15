@@ -30,6 +30,10 @@ class _VoiceStatusPanelState extends State<VoiceStatusPanel>
   // Kept alive during the collapse animation so content doesn't vanish mid-slide.
   VoipSession? _displayedSession;
 
+  // Incremented on every audio/stats tick so only the header rebuilds,
+  // not the entire panel.
+  final _statsTick = ValueNotifier<int>(0);
+
   VoipSession? get _session =>
       widget.callManager.currentSessions.firstOrNull;
 
@@ -102,7 +106,7 @@ class _VoiceStatusPanelState extends State<VoiceStatusPanel>
     });
     _audioSub = session.onUpdateVolumeVisualizers.listen((_) async {
       await session.updateStats();
-      if (mounted) setState(() {});
+      if (mounted) _statsTick.value++;
     });
   }
 
@@ -113,6 +117,7 @@ class _VoiceStatusPanelState extends State<VoiceStatusPanel>
     }
     _sessionSub?.cancel();
     _audioSub?.cancel();
+    _statsTick.dispose();
     _slideController.dispose();
     _settingsController.dispose();
     super.dispose();
@@ -160,7 +165,11 @@ class _VoiceStatusPanelState extends State<VoiceStatusPanel>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _statusHeader(context, session, roomLabel, connected),
+          ValueListenableBuilder<int>(
+            valueListenable: _statsTick,
+            builder: (context, _, __) =>
+                _statusHeader(context, session, roomLabel, connected),
+          ),
           if (connected) _actionButtons(context, session),
           if (connected && (session.isSharingScreen || session.isCameraEnabled))
             SizeTransition(
