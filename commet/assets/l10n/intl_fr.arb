@@ -1331,7 +1331,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "labelEncryptedPreviewDescription": "Permet l'utilisation d'un serveur de proxy ({proxyUrl}) pour obtenir la prévisualisation d'une URL dans un tchat chiffré. Le contenu de ces requêtes sera caché à votre serveur utilisant la prévisualisation des URL dans les tchats chiffrés de Commet.\nPour en savoir plus : https://github.com/commetchat/encrypted_url_preview",
+  "labelEncryptedPreviewDescription": "Permet l'utilisation d'un serveur de proxy ({proxyUrl}) pour obtenir la prévisualisation d'une URL dans un tchat chiffré. Le contenu de ces requêtes sera caché à votre serveur utilisant la prévisualisation des URL dans les tchats chiffrés de Tungstn.\nPour en savoir plus : https://github.com/commetchat/encrypted_url_preview",
   "@labelEncryptedPreviewDescription": {
     "description": "Explains briefly how encrypted url preview works",
     "type": "text",
@@ -1480,7 +1480,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "unifiedPushExplainer": "# Unified Push\nCette version de Commet a été compilée sans les services Google Play. Pour recevoir des notifications push, vous aurez besoin d'utiliser [Unified Push](https://unifiedpush.org/).\n\nSi vous disposez déjà d'une application de distribution de notifications compatible avec Unified Push, vous pouvez l'utiliser dans la configuration ci-dessous\n",
+  "unifiedPushExplainer": "# Unified Push\nCette version de Tungstn a été compilée sans les services Google Play. Pour recevoir des notifications push, vous aurez besoin d'utiliser [Unified Push](https://unifiedpush.org/).\n\nSi vous disposez déjà d'une application de distribution de notifications compatible avec Unified Push, vous pouvez l'utiliser dans la configuration ci-dessous\n",
   "@unifiedPushExplainer": {
     "description": "Explains the need for unified push. Supports markdown",
     "type": "text",

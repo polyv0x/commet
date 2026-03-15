@@ -16,7 +16,7 @@ class AppConfig {
 
   static Future<String> getSocketPath() async {
     if (PlatformUtils.isWindows) {
-      return r"\\.\pipe\chat.commet.commetapp";
+      return r"\\.\pipe\chat.tungstn.app";
     }
 
     final dir = await getApplicationSupportDirectory();

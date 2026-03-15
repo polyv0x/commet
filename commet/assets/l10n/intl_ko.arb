@@ -272,7 +272,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "unifiedPushExplainer": "# Unified Push\n이 버전의 Commet은 Google Play 서비스 없이 빌드 되었습니다. 푸시 알림을 받으려면 [Unified Push](https://unifiedpush.org/)를 사용해야 합니다 . \n\nUnified Push compatible distributor 앱이 이미 설치되어 있는 경우 아래에서 구성할 수 있습니다\n",
+  "unifiedPushExplainer": "# Unified Push\n이 버전의 Tungstn은 Google Play 서비스 없이 빌드 되었습니다. 푸시 알림을 받으려면 [Unified Push](https://unifiedpush.org/)를 사용해야 합니다 . \n\nUnified Push compatible distributor 앱이 이미 설치되어 있는 경우 아래에서 구성할 수 있습니다\n",
   "@unifiedPushExplainer": {
     "description": "Explains the need for unified push. Supports markdown",
     "type": "text",
@@ -1306,7 +1306,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "labelEncryptedPreviewDescription": "프록시 서버({proxyUrl})을(를) 사용하여 암호화된 채팅에서 URL 미리보기를 활성화 합니다. 이러한 요청의 내용은 Commet의 '암호화된 URL 미리보기'를 사용하여 홈 서버에서 보이지 않습니다\n자세히 알아보기: https://github.com/commetchat/encrypted_url_preview",
+  "labelEncryptedPreviewDescription": "프록시 서버({proxyUrl})을(를) 사용하여 암호화된 채팅에서 URL 미리보기를 활성화 합니다. 이러한 요청의 내용은 Tungstn의 '암호화된 URL 미리보기'를 사용하여 홈 서버에서 보이지 않습니다\n자세히 알아보기: https://github.com/commetchat/encrypted_url_preview",
   "@labelEncryptedPreviewDescription": {
     "description": "Explains briefly how encrypted url preview works",
     "type": "text",

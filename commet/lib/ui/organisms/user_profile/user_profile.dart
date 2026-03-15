@@ -475,7 +475,7 @@ class _UserProfileState extends State<UserProfile> {
                 child: Center(
                   child: Container(
                     child: tiamat.Text.labelLow(
-                        "You don't have any badges. You can get badges by donating and supporting development of Commet"),
+                        "You don't have any badges. You can get badges by donating and supporting development of Tungstn"),
                   ),
                 ),
               ),

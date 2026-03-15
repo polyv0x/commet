@@ -211,7 +211,7 @@ class _LogPageState extends State<LogPage> {
     var deviceInfo = await DeviceInfoPlugin().deviceInfo;
     return """
 > [!NOTE]
-> This issue has been automatically filled out by Commet's issue reporter
+> This issue has been automatically filled out by Tungstn's issue reporter
 
 ### Exception: 
 ${entry.content}

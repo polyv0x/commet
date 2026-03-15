@@ -21,7 +21,7 @@ class WebrtcAndroidScreencaptureSource implements ScreenCaptureSource {
 
           const androidConfig = FlutterBackgroundAndroidConfig(
             notificationTitle: 'Screen Sharing',
-            notificationText: 'Commet is sharing the screen.',
+            notificationText: 'Tungstn is sharing the screen.',
             notificationImportance: AndroidNotificationImportance.normal,
             notificationIcon:
                 AndroidResource(name: 'notification_icon', defType: 'mipmap'),

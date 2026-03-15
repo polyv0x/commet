@@ -768,7 +768,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "unifiedPushExplainer": "# Unified Push\nDiese Version von Commet verwendet keine Google-Play-Services. Um Push-Benachrichtignungen zu erhalten, muss [Unified Push](https://unifiedpush.org/) verwendet werden.\n\nWenn bereits eine Unified-Push-Distributor-App installiert ist, kann sie unten konfiguriert werden.\n",
+  "unifiedPushExplainer": "# Unified Push\nDiese Version von Tungstn verwendet keine Google-Play-Services. Um Push-Benachrichtignungen zu erhalten, muss [Unified Push](https://unifiedpush.org/) verwendet werden.\n\nWenn bereits eine Unified-Push-Distributor-App installiert ist, kann sie unten konfiguriert werden.\n",
   "@unifiedPushExplainer": {
     "description": "Explains the need for unified push. Supports markdown",
     "type": "text",
@@ -1478,7 +1478,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "labelEncryptedPreviewDescription": "Aktiviere die Verwendung eines Proxy-Servers ({proxyUrl}), um eine URL-Vorschau in einem verschlüsselten Chat zu erhalten. Der Inhalt dieser Anfragen wird mit Hilfe von Commets 'verschlüsselter URL-Vorschau' vor deinem Homeserver verborgen.\nMehr erfahren: https://github.com/commetchat/encrypted_url_preview",
+  "labelEncryptedPreviewDescription": "Aktiviere die Verwendung eines Proxy-Servers ({proxyUrl}), um eine URL-Vorschau in einem verschlüsselten Chat zu erhalten. Der Inhalt dieser Anfragen wird mit Hilfe von Tungstns 'verschlüsselter URL-Vorschau' vor deinem Homeserver verborgen.\nMehr erfahren: https://github.com/commetchat/encrypted_url_preview",
   "@labelEncryptedPreviewDescription": {
     "description": "Explains briefly how encrypted url preview works",
     "type": "text",

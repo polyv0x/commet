@@ -612,7 +612,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "unifiedPushExplainer": "# Unified Push\nSee Commeti versioon on kompileeritud ilma Google Play Services toeta. Tõuketeavituste jaoks pead sa kasutama [Unified Push](https://unifiedpush.org/) teenuseid. \n\nKui sul juba on Unified Push teenustega ühilduv haldusrakendus paigaldatud, siis saad teda alljärgnevalt seadistada\n",
+  "unifiedPushExplainer": "# Unified Push\nSee Tungstni versioon on kompileeritud ilma Google Play Services toeta. Tõuketeavituste jaoks pead sa kasutama [Unified Push](https://unifiedpush.org/) teenuseid. \n\nKui sul juba on Unified Push teenustega ühilduv haldusrakendus paigaldatud, siis saad teda alljärgnevalt seadistada\n",
   "@unifiedPushExplainer": {
     "description": "Explains the need for unified push. Supports markdown",
     "type": "text",
@@ -1210,7 +1210,7 @@
       "proxyUrl": {}
     }
   },
-  "labelEncryptedPreviewDescription": "Võrguaadresside eelvaate laadimiseks krüptitud vestlustes võta kasutusele proksiserver ({proxyUrl}). Selliste päringute sisu saab olema sinu koduserveri eest peidetud Commeti „krüptitud võrguaadresside eelvaate“ abil\nLisateavet leiad siit: https://github.com/commetchat/encrypted_url_preview",
+  "labelEncryptedPreviewDescription": "Võrguaadresside eelvaate laadimiseks krüptitud vestlustes võta kasutusele proksiserver ({proxyUrl}). Selliste päringute sisu saab olema sinu koduserveri eest peidetud Tungstni „krüptitud võrguaadresside eelvaate“ abil\nLisateavet leiad siit: https://github.com/commetchat/encrypted_url_preview",
   "@labelEncryptedPreviewDescription": {
     "description": "Explains briefly how encrypted url preview works",
     "type": "text",

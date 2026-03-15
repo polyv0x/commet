@@ -203,7 +203,7 @@
       "spaceName": {}
     }
   },
-  "unifiedPushExplainer": "# Unified Push\nこのバージョンの CommetはGoogle Play Servicesなしで設計されています。 プッシュ通知を受信するには、 [Unified Push](https://unifiedpush.org/)を使用する必要があります。 \n\nすでにUnified Push対応ディストリビューターアプリがインストールされている場合は、以下で設定できます。\n",
+  "unifiedPushExplainer": "# Unified Push\nこのバージョンの TungstnはGoogle Play Servicesなしで設計されています。 プッシュ通知を受信するには、 [Unified Push](https://unifiedpush.org/)を使用する必要があります。 \n\nすでにUnified Push対応ディストリビューターアプリがインストールされている場合は、以下で設定できます。\n",
   "@unifiedPushExplainer": {
     "description": "Explains the need for unified push. Supports markdown",
     "type": "text",
@@ -1518,7 +1518,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "labelEncryptedPreviewDescription": "プロキシサーバー({proxyUrl})を使用して、暗号化されたチャットでURLプレビューを取得します。これらのリクエストの内容は、Commetの「暗号化された URL プレビュー」を使用してホームサーバーから非表示になります。\n詳細:https://github.com/commetchat/encrypted_url_preview",
+  "labelEncryptedPreviewDescription": "プロキシサーバー({proxyUrl})を使用して、暗号化されたチャットでURLプレビューを取得します。これらのリクエストの内容は、Tungstnの「暗号化された URL プレビュー」を使用してホームサーバーから非表示になります。\n詳細:https://github.com/commetchat/encrypted_url_preview",
   "@labelEncryptedPreviewDescription": {
     "description": "Explains briefly how encrypted url preview works",
     "type": "text",

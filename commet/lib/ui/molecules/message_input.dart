@@ -392,14 +392,14 @@ class MessageInputState extends State<MessageInput> {
 
   void dismissKeyboard() {
     if (BuildConfig.ANDROID) {
-      const platform = const MethodChannel('chat.commet.commetapp/utils');
+      const platform = const MethodChannel('chat.tungstn.app/utils');
       platform.invokeMethod("dismissKeyboard");
     }
   }
 
   Future<bool> isKeyboardOpen() async {
     if (BuildConfig.ANDROID) {
-      const platform = const MethodChannel('chat.commet.commetapp/utils');
+      const platform = const MethodChannel('chat.tungstn.app/utils');
       var result = await platform.invokeMethod<bool>("isKeyboardOpen");
       return result!;
     } else {

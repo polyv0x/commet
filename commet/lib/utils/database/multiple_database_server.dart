@@ -54,7 +54,7 @@ final class MultiDatabaseServer {
 class DatabaseIsolate {
   static final receiveConnectPort = ReceivePort();
   static SendPort? connectToServer;
-  static const isolateName = "chat.commet.commetapp.database_isolate";
+  static const isolateName = "chat.tungstn.app.database_isolate";
 
   static Future<void> start() async {
     connectToServer = IsolateNameServer.lookupPortByName(isolateName);

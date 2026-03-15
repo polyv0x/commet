@@ -16,3 +16,4 @@ widgets/calendar/android/local.properties
 /deploy.sh
 /nginx/
 /.build-cache/pub-cache
+/CLAUDE.md

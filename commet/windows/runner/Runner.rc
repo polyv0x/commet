@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "commet.chat" "\0"
-            VALUE "FileDescription", "commet" "\0"
+            VALUE "CompanyName", "tungstn" "\0"
+            VALUE "FileDescription", "tungstn" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "commet" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2023 commet.chat. All rights reserved." "\0"
-            VALUE "OriginalFilename", "commet.exe" "\0"
-            VALUE "ProductName", "commet" "\0"
+            VALUE "InternalName", "tungstn" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2023 Tungstn. All rights reserved." "\0"
+            VALUE "OriginalFilename", "tungstn.exe" "\0"
+            VALUE "ProductName", "tungstn" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

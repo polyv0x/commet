@@ -408,7 +408,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "unifiedPushExplainer": "# UnifiedPush\n此版本的 Commet 是在没有 Google Play 服务的情况下构建的。为了接收推送通知，您需要使用 [UnifiedPush](https://unifiedpush.org/)。 \n\n如果您已经安装了兼容 UnifiedPush 的分发器应用，可以在下面进行配置\n",
+  "unifiedPushExplainer": "# UnifiedPush\n此版本的 Tungstn 是在没有 Google Play 服务的情况下构建的。为了接收推送通知，您需要使用 [UnifiedPush](https://unifiedpush.org/)。 \n\n如果您已经安装了兼容 UnifiedPush 的分发器应用，可以在下面进行配置\n",
   "@unifiedPushExplainer": {
     "description": "Explains the need for unified push. Supports markdown",
     "type": "text",
@@ -1086,7 +1086,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "labelEncryptedPreviewDescription": "启用使用代理服务器 ({proxyUrl}) 在加密聊天中获取 url 预览。这些请求的内容将使用 Commet 的“加密 url 预览”以隐藏您的主服务器\n了解更多：https://github.com/commetchat/encrypted_url_preview",
+  "labelEncryptedPreviewDescription": "启用使用代理服务器 ({proxyUrl}) 在加密聊天中获取 url 预览。这些请求的内容将使用 Tungstn 的“加密 url 预览”以隐藏您的主服务器\n了解更多：https://github.com/commetchat/encrypted_url_preview",
   "@labelEncryptedPreviewDescription": {
     "description": "Explains briefly how encrypted url preview works",
     "type": "text",

@@ -241,7 +241,7 @@ class AndroidNotifier implements Notifier {
         ticker: content.content,
         bubble: bubblesEnabled
             ? BubbleMetadata(
-                "chat.commet.commetapp.BubbleActivity",
+                "chat.tungstn.app.BubbleActivity",
                 extra: payload,
                 desiredHeight: 600,
               )

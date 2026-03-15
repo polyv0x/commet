@@ -763,7 +763,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "unifiedPushExplainer": "# Unified Push\nEsta versión de Commet se ha creado sin Google Play Services. Para recibir notificaciones push, tendrás que utilizar [Unified Push](https://unifiedpush.org/). \n\nSi ya tienes instalada una aplicación distribuidora compatible con Unified Push, puedes configurarla a continuación\n",
+  "unifiedPushExplainer": "# Unified Push\nEsta versión de Tungstn se ha creado sin Google Play Services. Para recibir notificaciones push, tendrás que utilizar [Unified Push](https://unifiedpush.org/). \n\nSi ya tienes instalada una aplicación distribuidora compatible con Unified Push, puedes configurarla a continuación\n",
   "@unifiedPushExplainer": {
     "description": "Explains the need for unified push. Supports markdown",
     "type": "text",
@@ -1316,7 +1316,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "labelEncryptedPreviewDescription": "Habilitar el uso de un servidor proxy ({proxyUrl}) para obtener una vista previa de url en un chat cifrado. El contenido de estas peticiones será ocultado de su servidor personal usando la 'vista previa de url cifrada' de Commet\nMás información: https://github.com/commetchat/encrypted_url_preview",
+  "labelEncryptedPreviewDescription": "Habilitar el uso de un servidor proxy ({proxyUrl}) para obtener una vista previa de url en un chat cifrado. El contenido de estas peticiones será ocultado de su servidor personal usando la 'vista previa de url cifrada' de Tungstn\nMás información: https://github.com/commetchat/encrypted_url_preview",
   "@labelEncryptedPreviewDescription": {
     "description": "Explains that gifs will be fetched via proxy",
     "type": "text",

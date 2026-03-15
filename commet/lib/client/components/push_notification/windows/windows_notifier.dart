@@ -30,7 +30,7 @@ class WindowsNotifier implements Notifier {
   @override
   Future<void> init() async {
     final dir = await getTemporaryDirectory();
-    var file = p.join(dir.path, "chat.commet.app", "commet_app_icon.png");
+    var file = p.join(dir.path, "chat.tungstn.app", "tungstn_app_icon.png");
 
     ByteData data = await rootBundle
         .load("assets/images/app_icon/app_icon_transparent_cropped.png");
@@ -41,8 +41,8 @@ class WindowsNotifier implements Notifier {
     var uri = Uri.file(file, windows: true);
 
     await WinToast.instance().initialize(
-      aumId: 'chat.commet.app.windows-a33bc9ba',
-      displayName: 'Commet',
+      aumId: 'chat.tungstn.app.windows-a33bc9ba',
+      displayName: 'Tungstn',
       iconPath: uri.toString(),
       clsid: '7685C041-9D17-4112-8FC4-386743A3D53E',
     );

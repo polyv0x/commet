@@ -165,7 +165,7 @@ class _DonationRewardsConfirmationState
                     ),
                   if (receivedAwards?.isEmpty == true)
                     tiamat.Text.labelLow(
-                        "Could not find any donations :( Please consider donating to support development of Commet!"),
+                        "Could not find any donations :( Please consider donating to support development of Tungstn!"),
                   if (receivedAwards?.isNotEmpty == true)
                     Padding(
                       padding: const EdgeInsets.all(8.0),

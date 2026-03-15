@@ -1,4 +1,4 @@
-package chat.commet.commetapp
+package chat.tungstn.app
 
 import android.content.Context
 import android.util.Log

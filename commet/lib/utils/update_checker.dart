@@ -55,7 +55,7 @@ class UpdateChecker {
         var tag = fields[key];
         clientManager!.alertManager.addAlert(Alert(AlertType.info,
             messageGetter: () =>
-                "There is a newer version of Commet available: ${tag}",
+                "There is a newer version of Tungstn available: ${tag}",
             titleGetter: () => "Update Available",
             action: (context) => doUpdateAction(context, canAutoUpdate)));
       } else {

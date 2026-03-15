@@ -1,0 +1,83 @@
+<svg viewBox="0 0 512 522" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <defs>
+        
+        <clipPath id="hexClip">
+          <polygon points="0,-170 147,-85 147,85 0,170 -147,85 -147,-85"/>
+        </clipPath>
+        <!-- Facets clip: hex inset ~2px on all sides so colored edges never reach the outer boundary -->
+        <clipPath id="hexFacetClip">
+          <polygon points="0,-168 145,-84 145,84 0,168 -145,84 -145,-84"/>
+        </clipPath>
+        <!-- Metallic sparkle noise filter -->
+        <filter id="metalNoise" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.72 0.58" numOctaves="4" seed="8" result="noise"/>
+          <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise"/>
+          <feBlend in="SourceGraphic" in2="grayNoise" mode="soft-light" result="blended"/>
+          <feComposite in="blended" in2="SourceGraphic" operator="in"/>
+        </filter>
+        <!-- Light sheen and sparkle overlays -->
+        <radialGradient id="hLight" cx="38%" cy="28%" r="65%">
+          <stop offset="0%"   stop-color="#d8b4fe" stop-opacity="0.20"/>
+          <stop offset="100%" stop-color="#0a0a0f"  stop-opacity="0.0"/>
+        </radialGradient>
+        <radialGradient id="sparkleA" cx="65%" cy="20%" r="55%">
+          <stop offset="0%"   stop-color="#fde68a" stop-opacity="0.13"/>
+          <stop offset="55%"  stop-color="#f9a8d4" stop-opacity="0.06"/>
+          <stop offset="100%" stop-color="#e879f9" stop-opacity="0.0"/>
+        </radialGradient>
+        <radialGradient id="sparkleB" cx="80%" cy="75%" r="45%">
+          <stop offset="0%"   stop-color="#fde68a" stop-opacity="0.09"/>
+          <stop offset="100%" stop-color="#e879f9" stop-opacity="0.0"/>
+        </radialGradient>
+        <linearGradient id="lgA1" x1="30%" y1="0%" x2="70%" y2="100%"><stop offset="0%" stop-color="#c084fc"></stop><stop offset="100%" stop-color="#818cf8"></stop></linearGradient>
+        <linearGradient id="lgA2" x1="0%" y1="20%" x2="100%" y2="80%"><stop offset="0%" stop-color="#c084fc"></stop><stop offset="100%" stop-color="#6366f1"></stop></linearGradient>
+        <linearGradient id="lgA3" gradientUnits="userSpaceOnUse" x1="0" y1="170" x2="-147" y2="0"><stop offset="0%" stop-color="#10b981"></stop><stop offset="100%" stop-color="#6366f1"></stop></linearGradient>
+        <linearGradient id="lgA4" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#4f46e5"></stop><stop offset="100%" stop-color="#10b981" stop-opacity="0.45"></stop></linearGradient>
+        <!-- Light mode: near-white background with subtle online-gradient wash -->
+        <!-- Base: pure near-white -->
+        <!-- Wash: emerald top-left → sky-blue bottom-right, very low opacity -->
+        <linearGradient id="bgWashLight" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stop-color="#10b981" stop-opacity="0.07"/>
+          <stop offset="50%"  stop-color="#38bdf8" stop-opacity="0.05"/>
+          <stop offset="100%" stop-color="#ffffff"  stop-opacity="0.0"/>
+        </linearGradient>
+        <clipPath id="hexMinusT">
+          <path clip-rule="evenodd" d="M0,-170 L147,-85 L147,85 L0,200 L-147,85 L-147,-85 Z M-115.95,-33.7 H115.95 V16.4 H28.35 V191.3 H-28.35 V16.4 H-115.95 Z"/>
+        </clipPath>
+    </defs>
+    <!-- Light mode background -->
+    <rect width="512" height="522" fill="#e8e6f0"/>
+    <rect width="512" height="522" fill="url(#bgWashLight)"/>
+    <g transform="translate(256 256)">
+        <!-- Facets clipped to inset hex so colored edges never reach the outer boundary -->
+        <g clip-path="url(#hexMinusT)">
+            <polygon points="0,-170 147,-85 147,85 0,170 -147,85 -147,-85" fill="#4f46e5"></polygon>
+            <polygon points="0,-170 147,-85 0,0" fill="url(#lgA1)"></polygon>
+            <polygon points="147,-85 147,85 0,0" fill="url(#lgA2)"></polygon>
+            <polygon points="147,85 0,170 0,0" fill="#6366f1"></polygon>
+            <polygon points="0,170 -147,85 0,0" fill="url(#lgA3)"></polygon>
+            <polygon points="-147,85 -147,-85 0,0" fill="url(#lgA4)"></polygon>
+            <polygon points="-147,-85 0,-170 0,0" fill="#818cf8"></polygon>
+            <!-- Noise texture pass -->
+            <polygon points="0,-170 147,-85 147,85 0,170 -147,85 -147,-85" fill="#9d7ef8" opacity="0.12" filter="url(#metalNoise)"/>
+            <!-- Warm champagne sparkle overlays -->
+            <polygon points="0,-170 147,-85 147,85 0,170 -147,85 -147,-85" fill="url(#sparkleA)"/>
+            <polygon points="0,-170 147,-85 147,85 0,170 -147,85 -147,-85" fill="url(#sparkleB)"/>
+            <!-- Specular edge lines -->
+            <line x1="0" y1="-170" x2="147" y2="-85" stroke="white" stroke-width="1.2" opacity="0.45" stroke-linecap="round"/>
+            <line x1="0" y1="-170" x2="-147" y2="-85" stroke="white" stroke-width="0.8" opacity="0.22" stroke-linecap="round"/>
+            <line x1="0" y1="-170" x2="0" y2="0" stroke="white" stroke-width="0.7" opacity="0.18" stroke-linecap="round"/>
+            <line x1="147" y1="-85" x2="0" y2="0" stroke="white" stroke-width="0.6" opacity="0.14" stroke-linecap="round"/>
+            <!-- Global light sheen -->
+            <polygon points="0,-170 147,-85 147,85 0,170 -147,85 -147,-85" fill="url(#hLight)"/>
+            <!-- Outer edge -->
+            <polygon points="0,-170 147,-85 147,85 0,170 -147,85 -147,-85" fill="none" stroke="#e8e6f0" stroke-width="1" opacity="0.2"></polygon>
+            <!-- Inner dividers -->
+            <line x1="0"    y1="-170" x2="0"    y2="0" stroke="#e8e6f0" stroke-width="0.5" opacity="0.10"/>
+            <line x1="147"  y1="85"   x2="0"    y2="0" stroke="#e8e6f0" stroke-width="0.5" opacity="0.10"/>
+            <line x1="0"    y1="170"  x2="0"    y2="0" stroke="#e8e6f0" stroke-width="0.5" opacity="0.10"/>
+            <line x1="-147" y1="85"   x2="0"    y2="0" stroke="#e8e6f0" stroke-width="0.5" opacity="0.10"/>
+            <line x1="-147" y1="-85"  x2="0"    y2="0" stroke="#e8e6f0" stroke-width="0.5" opacity="0.10"/>
+        </g>
+    </g>
+</svg>

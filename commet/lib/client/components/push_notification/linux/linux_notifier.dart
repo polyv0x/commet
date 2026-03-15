@@ -175,7 +175,7 @@ class LinuxNotifier implements Notifier {
       ],
       customHints: [
         notif.LinuxNotificationCustomHint('desktop-entry',
-            notif.LinuxHintStringValue("chat.commet.commetapp")),
+            notif.LinuxHintStringValue("chat.tungstn.app")),
       ],
       category: LinuxNotificationCategory.imReceived,
     );

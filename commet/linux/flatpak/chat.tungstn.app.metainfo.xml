@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>chat.commet.commetapp</id>
-  <name>Commet</name>
+  <id>chat.tungstn.app</id>
+  <name>Tungstn</name>
   <summary>Your space to connect!</summary>
   <developer_name>Airyz</developer_name>
-  <url type="homepage">https://commet.chat</url>
+  <url type="homepage">https://tungstn.chat</url>
   <metadata_license>CC-BY-SA-4.0</metadata_license>
   <project_license>AGPL-3.0-only</project_license>
   <supports>
@@ -13,9 +13,9 @@
     <control>touch</control>
   </supports>
   <description>
-    <p>Commet is a client for Matrix focused on providing a feature rich experience while maintaining a simple interface. The goal is to build a secure, privacy respecting app without compromising on the features you have come to expect from a modern chat client. </p>
+    <p>Tungstn is a client for Matrix focused on providing a feature rich experience while maintaining a simple interface. The goal is to build a secure, privacy respecting app without compromising on the features you have come to expect from a modern chat client. </p>
   </description>
-  <launchable type="desktop-id">chat.commet.commetapp.desktop</launchable>
+  <launchable type="desktop-id">chat.tungstn.app.desktop</launchable>
   <content_rating type="oars-1.1" />
   <releases>
     <release version="{{VERSION_TAG}}" />

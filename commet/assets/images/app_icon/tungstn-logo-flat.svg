@@ -1,0 +1,12 @@
+<svg viewBox="109 86 294 340" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <defs>
+        <clipPath id="hexMinusT">
+          <path clip-rule="evenodd" d="M0,-170 L147,-85 L147,85 L0,200 L-147,85 L-147,-85 Z M-115.95,-33.7 H115.95 V16.4 H28.35 V191.3 H-28.35 V16.4 H-115.95 Z"/>
+        </clipPath>
+    </defs>
+    <g transform="translate(256 256)">
+        <polygon clip-path="url(#hexMinusT)"
+                 points="0,-170 147,-85 147,85 0,170 -147,85 -147,-85"
+                 fill="currentColor"/>
+    </g>
+</svg>

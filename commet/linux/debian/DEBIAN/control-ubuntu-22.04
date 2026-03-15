@@ -1,4 +1,4 @@
-Package: commet
+Package: tungstn
 Version: {{VERSION_TAG}}
 Architecture: all
 Essential: no

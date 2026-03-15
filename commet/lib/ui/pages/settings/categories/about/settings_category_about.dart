@@ -128,9 +128,9 @@ class _AppInfoState extends State<_AppInfo> {
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: SvgPicture.asset(
-                  "assets/images/app_icon/icon.svg",
-                  theme: SvgTheme(
-                      currentColor: Theme.of(context).colorScheme.onSurface),
+                  MediaQuery.platformBrightnessOf(context) == Brightness.dark
+                      ? "assets/images/app_icon/tungstn-logo-alt-dark.svg"
+                      : "assets/images/app_icon/tungstn-logo-alt-light.svg",
                 ),
               ),
             ),

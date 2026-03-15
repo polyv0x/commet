@@ -52,7 +52,7 @@ class Log {
     print: (self, parent, zone, line) {
       parent.print(zone, "($prefix) $line");
 
-      if (line.startsWith("[Commet")) {
+      if (line.startsWith("[Tungstn")) {
         return;
       }
 
@@ -97,7 +97,7 @@ class Log {
         break;
     }
 
-    return '[Commet (${Log.prefix})] $logsStr';
+    return '[Tungstn (${Log.prefix})] $logsStr';
   }
 
   static void _print(LogEntry entry) {

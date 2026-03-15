@@ -1,8 +1,8 @@
-app-id: chat.commet.commetapp
+app-id: chat.tungstn.app
 runtime: org.gnome.Platform
 runtime-version: '48'
 sdk: org.gnome.Sdk
-command: commet
+command: tungstn
 separate-locales: false
 
 add-extensions:
@@ -113,20 +113,20 @@ modules:
       url: https://github.com/FFmpeg/nv-codec-headers.git
       commit: 855f8263d97bbdcaeabaaaa2997e1ccad7c52dc3
 
-- name: commetapp
+- name: tungstnapp
   buildsystem: simple
   only-arches:
   - x86_64
   post-install:
-  - install -Dm755 commet-wrapper ${FLATPAK_DEST}/bin/commet
+  - install -Dm755 tungstn-wrapper ${FLATPAK_DEST}/bin/tungstn
   build-commands:
-  - mkdir -p /app/commet
+  - mkdir -p /app/tungstn
   - mkdir -p /app/lib/ffmpeg
-  - cp -r bundle /app/commet
-  - chmod +x /app/commet/bundle/commet
-  - install -Dm644 chat.commet.commetapp.metainfo.xml /app/share/appdata/chat.commet.commetapp.appdata.xml
-  - install -Dm644 icon.png /app/share/icons/hicolor/512x512/apps/chat.commet.commetapp.png
-  - install -Dm644 chat.commet.commetapp.desktop /app/share/applications/chat.commet.commetapp.desktop
+  - cp -r bundle /app/tungstn
+  - chmod +x /app/tungstn/bundle/tungstn
+  - install -Dm644 chat.tungstn.app.metainfo.xml /app/share/appdata/chat.tungstn.app.appdata.xml
+  - install -Dm644 icon.png /app/share/icons/hicolor/512x512/apps/chat.tungstn.app.png
+  - install -Dm644 chat.tungstn.app.desktop /app/share/applications/chat.tungstn.app.desktop
   - mkdir -p /app/bin
   - ls /app/lib64
   - cp -a /app/lib64/. /app/lib/
@@ -134,13 +134,13 @@ modules:
   - type: dir
     path: commet
   - type: file
-    path: chat.commet.commetapp.desktop
+    path: chat.tungstn.app.desktop
   - type: file
-    path: chat.commet.commetapp.metainfo.xml
+    path: chat.tungstn.app.metainfo.xml
   - type: file
     path: icon.png
   - type: script
-    dest-filename: commet-wrapper
+    dest-filename: tungstn-wrapper
     commands:
       - export TMPDIR=$XDG_RUNTIME_DIR/app/$FLATPAK_ID
-      - exec /app/commet/bundle/commet "$@"
+      - exec /app/tungstn/bundle/tungstn "$@"

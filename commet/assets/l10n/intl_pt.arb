@@ -602,7 +602,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "unifiedPushExplainer": "# Unified Push\nEssa versão do Commet foi feita sem Serviços do Google Play. Para receber notificações, precisa usar [Unified Push](https://unifiedpush.org/). \n\nSe já tem uma app compatível com Unified Push instalado, pode configurá-lo abaixo\n",
+  "unifiedPushExplainer": "# Unified Push\nEssa versão do Tungstn foi feita sem Serviços do Google Play. Para receber notificações, precisa usar [Unified Push](https://unifiedpush.org/). \n\nSe já tem uma app compatível com Unified Push instalado, pode configurá-lo abaixo\n",
   "@unifiedPushExplainer": {
     "description": "Explains the need for unified push. Supports markdown",
     "type": "text",
@@ -1010,7 +1010,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "labelEncryptedPreviewDescription": "Ativar o uso de um servidor intermediário ({proxyUrl}) para ter prévia de URLs numa conversa criptografada. O conteúdo destas solicitações será escondido do seu servidor local usando a \"prévia de URLs criptografada\" do Commet\nAprenda mais: https://github.com/commetchat/encrypted_url_preview",
+  "labelEncryptedPreviewDescription": "Ativar o uso de um servidor intermediário ({proxyUrl}) para ter prévia de URLs numa conversa criptografada. O conteúdo destas solicitações será escondido do seu servidor local usando a \"prévia de URLs criptografada\" do Tungstn\nAprenda mais: https://github.com/commetchat/encrypted_url_preview",
   "@labelEncryptedPreviewDescription": {
     "description": "Explains briefly how encrypted url preview works",
     "type": "text",

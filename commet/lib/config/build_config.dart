@@ -51,9 +51,9 @@ class BuildConfig {
 
   static const bool SUPPORTS_CACHE = !WEB;
 
-  static const String app = "Commet";
+  static const String app = "Tungstn";
 
-  static const String appSchema = "chat.commet";
+  static const String appSchema = "chat.tungstn";
 
   static Uri donationRewardsApiHost = Uri.https("stripe-rewards.commet.chat");
 
