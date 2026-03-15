@@ -332,7 +332,7 @@ class _LoginPageViewState extends State<LoginPageView> {
 
   Text appName() {
     return const Text(
-      "Commet",
+      "Tungstn",
       style: TextStyle(fontFamily: 'Jellee', fontSize: 30),
     );
   }
@@ -343,7 +343,7 @@ class _LoginPageViewState extends State<LoginPageView> {
     return SizedBox(
       width: double.infinity,
       height: 50,
-      child: tiamat.Button(
+      child: tiamat.Button.gradient(
         text: promptSubmitLogin,
         onTap: flow != null
             ? () => widget.doPasswordLogin
@@ -417,8 +417,8 @@ class _LoginPageViewState extends State<LoginPageView> {
       width: 50,
       height: 50,
       child: SvgPicture.asset(
-        "assets/images/app_icon/icon.svg",
-        theme: SvgTheme(currentColor: Theme.of(context).colorScheme.onSurface),
+        "assets/images/app_icon/tungstn-logo-flat.svg",
+        colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
       ),
     );
   }

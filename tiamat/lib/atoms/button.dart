@@ -38,7 +38,19 @@ Widget wbButton(BuildContext context) {
   );
 }
 
-enum ButtonType { primary, secondary, success, danger, critical }
+enum ButtonType { primary, secondary, success, danger, critical, gradient }
+
+const _kLargeGradient = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  stops: [0.0, 0.30, 0.60, 1.0],
+  colors: [
+    Color(0xFFC084FC),
+    Color(0xFF818CF8),
+    Color(0xFF6366F1),
+    Color(0xFF4F46E5),
+  ],
+);
 
 class Button extends StatelessWidget {
   const Button({
@@ -85,21 +97,22 @@ class Button extends StatelessWidget {
   })  : type = ButtonType.critical,
         super(key: key);
 
+  const Button.gradient({
+    Key? key,
+    this.text = "Hello, World!",
+    this.onTap,
+    this.isLoading,
+  })  : type = ButtonType.gradient,
+        super(key: key);
+
   @override
   Widget build(BuildContext context) {
     ButtonStyle? style;
 
     switch (type) {
       case ButtonType.primary:
-        style = Theme.of(context).elevatedButtonTheme.style?.copyWith(
-              foregroundColor: WidgetStatePropertyAll(
-                Theme.of(context).colorScheme.onPrimary,
-              ),
-              backgroundColor: WidgetStatePropertyAll(
-                Theme.of(context).colorScheme.primary,
-              ),
-            );
-        break;
+        // Fall through to gradient rendering.
+        return _buildGradientButton(context);
       case ButtonType.secondary:
         style = Theme.of(context).elevatedButtonTheme.style?.copyWith(
               foregroundColor: WidgetStatePropertyAll(
@@ -133,6 +146,8 @@ class Button extends StatelessWidget {
               ),
             );
         break;
+      case ButtonType.gradient:
+        return _buildGradientButton(context);
     }
 
     return ElevatedButton(
@@ -147,6 +162,35 @@ class Button extends StatelessWidget {
         child: isLoading == true
             ? makeLoadingIndicator(context, style?.foregroundColor?.resolve({}))
             : tiamat.Text(text, color: style?.foregroundColor?.resolve({})),
+      ),
+    );
+  }
+
+  Widget _buildGradientButton(BuildContext context) {
+    final enabled = onTap != null && isLoading != true;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: enabled ? _kLargeGradient : null,
+        color: enabled
+            ? null
+            : Theme.of(context).colorScheme.onSurface.withAlpha(30),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: enabled ? () => onTap?.call() : null,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Center(
+              child: isLoading == true
+                  ? makeLoadingIndicator(context, Colors.white)
+                  : tiamat.Text(text, color: Colors.white),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -400,7 +400,7 @@ class _GetOrCreateRoomState extends State<GetOrCreateRoom> {
                             if (!selected!.hero)
                               Align(
                                 alignment: AlignmentGeometry.bottomRight,
-                                child: tiamat.Button(
+                                child: tiamat.Button.gradient(
                                   text: "Next",
                                   onTap: () {
                                     onNextButtonPressed(selected!);
@@ -474,7 +474,7 @@ class _GetOrCreateRoomState extends State<GetOrCreateRoom> {
                   width: width,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(0, 38, 0, 0),
-                    child: tiamat.Button(
+                    child: tiamat.Button.gradient(
                       text: "Next",
                       isLoading: entry == selected && loading,
                       onTap: () => onNextButtonPressed(entry),

@@ -142,9 +142,9 @@ class _SignupPageViewState extends State<SignupPageView> {
               width: 40,
               height: 40,
               child: SvgPicture.asset(
-                "assets/images/app_icon/icon.svg",
-                theme: SvgTheme(
-                    currentColor: Theme.of(context).colorScheme.onSurface),
+                "assets/images/app_icon/tungstn-logo-flat.svg",
+                colorFilter:
+                    const ColorFilter.mode(Colors.white, BlendMode.srcIn),
               ),
             ),
           ],
@@ -261,7 +261,7 @@ class _SignupPageViewState extends State<SignupPageView> {
         // Register button
         SizedBox(
           height: 50,
-          child: tiamat.Button(
+          child: tiamat.Button.gradient(
             text: "Create account",
             onTap: widget.isServerValid ? _onRegisterPressed : null,
           ),

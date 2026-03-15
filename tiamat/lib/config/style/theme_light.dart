@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 class ThemeLightColors {
   static const Color surfaceHigh1 = Color.fromARGB(255, 245, 245, 245);
-  static const Color primary = Color.fromARGB(255, 106, 141, 255);
+  static const Color primary = Color(0xFF818CF8);
   static const Color surface = Color.fromARGB(255, 245, 250, 251);
   static const Color surfaceContainer = Color.fromARGB(255, 233, 239, 240);
   static const Color surfaceContainerLow = Color.fromARGB(255, 239, 245, 246);

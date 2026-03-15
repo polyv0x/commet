@@ -349,7 +349,7 @@ class _RoomCreatorWidgetState extends State<RoomCreatorWidget> {
             ignoring: !valid,
             child: Opacity(
               opacity: valid ? 1 : 0.4,
-              child: tiamat.Button(
+              child: tiamat.Button.gradient(
                 text: promptConfirmRoomCreation,
                 onTap: () {
                   Navigator.of(context).pop(args);

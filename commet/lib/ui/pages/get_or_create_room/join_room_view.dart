@@ -91,7 +91,7 @@ class _JoinRoomViewState extends State<JoinRoomView> {
             ),
           ],
         ),
-        tiamat.Button(
+        tiamat.Button.gradient(
           text: promptConfirmRoomJoin,
           isLoading: joinLoading,
           onTap: () async {
