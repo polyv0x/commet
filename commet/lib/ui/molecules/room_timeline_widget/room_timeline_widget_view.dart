@@ -367,6 +367,9 @@ class RoomTimelineWidgetViewState extends State<RoomTimelineWidgetView> {
                   controller: controller,
                   reverse: true,
                   center: centerKey,
+                  // Keep no off-screen buffer so GIF Image widgets outside
+                  // the viewport are disposed and their frame schedulers stop.
+                  cacheExtent: 0,
                   slivers: <Widget>[
                     if (isLoadingFuture)
                       SliverList(

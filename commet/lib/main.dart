@@ -104,7 +104,7 @@ void bubble() async {
   var initialTheme = await preferences.resolveTheme();
 
   runApp(MaterialApp(
-      title: 'Commet',
+      title: 'Tungstn',
       theme: initialTheme,
       navigatorKey: navigator,
       debugShowCheckedModeBanner: false,
@@ -294,7 +294,7 @@ void enableEdgeToEdge() async {
           : Brightness.dark));
 }
 
-class App extends StatelessWidget {
+class App extends StatefulWidget {
   const App(
       {super.key,
       required this.clientManager,
@@ -308,39 +308,73 @@ class App extends StatelessWidget {
   final String? initialClientId;
 
   @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> with WidgetsBindingObserver {
+  // False whenever the app is not in the foreground (inactive, hidden, paused).
+  // TickerMode propagates this down the tree, pausing all Ticker-driven
+  // animations: shader backgrounds, ripple, shimmer, AnimationControllers.
+  // Native media playback (VoIP, video/audio via media_kit) is unaffected
+  // because it runs on its own threads outside the Flutter ticker system.
+  // Animated GIFs/WebP are handled separately via PausableAnimatedImage.
+  bool _active = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final active = state == AppLifecycleState.resumed;
+    if (active != _active) setState(() => _active = active);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return CustomSafeArea(
-      child: FocusNodeMonitor(
-        child: TextScaleChanger(
-          child: ThemeChanger(
-              shouldFollowSystemTheme: () =>
-                  preferences.shouldFollowSystemTheme.value,
-              getDarkTheme: () {
-                return preferences.resolveTheme(
-                    overrideBrightness: Brightness.dark);
-              },
-              getLightTheme: () {
-                return preferences.resolveTheme(
-                    overrideBrightness: Brightness.light);
-              },
-              initialTheme: initialTheme ?? ThemeDark.theme,
-              materialAppBuilder: (context, theme) {
-                return MaterialApp(
-                  title: 'Commet',
-                  theme: theme,
-                  debugShowCheckedModeBanner: false,
-                  navigatorKey: navigator,
-                  builder: (context, child) => Provider<ClientManager>(
-                    create: (context) => clientManager,
-                    child: child,
-                  ),
-                  home: AppView(
-                    clientManager: clientManager,
-                    initialClientId: initialClientId,
-                    initialRoom: initialRoom,
-                  ),
-                );
-              }),
+    return TickerMode(
+      enabled: _active,
+      child: CustomSafeArea(
+        child: FocusNodeMonitor(
+          child: TextScaleChanger(
+            child: ThemeChanger(
+                shouldFollowSystemTheme: () =>
+                    preferences.shouldFollowSystemTheme.value,
+                getDarkTheme: () {
+                  return preferences.resolveTheme(
+                      overrideBrightness: Brightness.dark);
+                },
+                getLightTheme: () {
+                  return preferences.resolveTheme(
+                      overrideBrightness: Brightness.light);
+                },
+                initialTheme: widget.initialTheme ?? ThemeDark.theme,
+                materialAppBuilder: (context, theme) {
+                  return MaterialApp(
+                    title: 'Tungstn',
+                    theme: theme,
+                    debugShowCheckedModeBanner: false,
+                    navigatorKey: navigator,
+                    builder: (context, child) => Provider<ClientManager>(
+                      create: (context) => widget.clientManager,
+                      child: child,
+                    ),
+                    home: AppView(
+                      clientManager: widget.clientManager,
+                      initialClientId: widget.initialClientId,
+                      initialRoom: widget.initialRoom,
+                    ),
+                  );
+                }),
+          ),
         ),
       ),
     );

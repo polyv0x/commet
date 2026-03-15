@@ -1,6 +1,7 @@
 import 'package:commet/client/attachment.dart';
 import 'package:commet/config/build_config.dart';
 import 'package:commet/ui/atoms/lightbox.dart';
+import 'package:commet/ui/atoms/pausable_animated_image.dart';
 import 'package:commet/ui/molecules/audio_player/audio_player.dart';
 import 'package:commet/ui/molecules/video_player/video_player.dart';
 import 'package:commet/ui/molecules/video_player/video_player_controller.dart';
@@ -78,7 +79,7 @@ class _MessageAttachmentState extends State<MessageAttachment> {
                     child: SizedBox(
                       width: attachment.width ?? 500,
                       height: attachment.height ?? 500,
-                      child: Image(
+                      child: PausableAnimatedImage(
                         image: attachment.image,
                         filterQuality: FilterQuality.medium,
                         // if we know the height, its safe to fill as it wont appear stretched

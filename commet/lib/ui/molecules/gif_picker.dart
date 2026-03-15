@@ -264,6 +264,7 @@ class _GifGridItem extends StatefulWidget {
 
 class _GifGridItemState extends State<_GifGridItem> {
   bool isLoading = true;
+  Widget? _frozenFrame;
 
   @override
   Widget build(BuildContext context) {
@@ -296,7 +297,10 @@ class _GifGridItemState extends State<_GifGridItem> {
                             if (mounted) setState(() => isLoading = false);
                           });
                         }
-                        return child;
+                        if (TickerMode.of(context)) {
+                          _frozenFrame = child;
+                        }
+                        return _frozenFrame ?? child;
                       }
                       return const SizedBox.shrink();
                     },
