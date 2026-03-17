@@ -3,7 +3,6 @@ import 'package:commet/client/components/photo_album_room/photo_album_room_compo
 import 'package:commet/client/components/voip_room/voip_room_component.dart';
 import 'package:commet/client/room.dart';
 import 'package:commet/main.dart';
-import 'package:commet/ui/atoms/scaled_safe_area.dart';
 import 'package:commet/ui/organisms/calendar_view/calendar_room_view.dart';
 import 'package:commet/ui/organisms/call_view/call.dart';
 import 'package:commet/ui/organisms/chat/chat.dart';
@@ -27,13 +26,9 @@ class RoomPrimaryView extends StatelessWidget {
       var key = ValueKey("room-primary-view-${room.localId}");
 
       if (voip != null) {
-        return ScaledSafeArea(
-          bottom: true,
-          top: false,
-          child: VoipRoomView(
-            voip,
-            key: key,
-          ),
+        return VoipRoomView(
+          voip,
+          key: key,
         );
       }
 

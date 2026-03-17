@@ -89,6 +89,7 @@ class _TimelineEventViewMessageState extends State<TimelineEventViewMessage>
 
   UrlPreviewComponent? previewComponent;
   bool doUrlPreview = false;
+  bool _suppressFormattedContent = false;
 
   ThreadsComponent? threadComponent;
   bool isHeadOfThread = false;
@@ -120,15 +121,29 @@ class _TimelineEventViewMessageState extends State<TimelineEventViewMessage>
     super.initState();
   }
 
+  // Suppress oEmbed/inline-image attachments at render time when the E2EE
+  // URL preview preference is off. Checked in build() so it responds
+  // immediately for visible widgets without any subscription overhead.
+  List<Attachment>? get _effectiveAttachments {
+    final room = widget.room ?? widget.timeline?.room;
+    if (room?.isE2EE == true && !preferences.urlPreviewInE2EEChat.value) {
+      return null;
+    }
+    return attachments;
+  }
+
   @override
   Widget build(BuildContext context) {
     var room = widget.room ?? widget.timeline?.room;
+    final effectiveAttachments = _effectiveAttachments;
     return TimelineEventLayoutMessage(
       senderName: senderName,
       senderColor: senderColor,
       senderAvatar: senderAvatar,
       showSender: showSender,
-      formattedContent: formattedContent,
+      formattedContent: _suppressFormattedContent && effectiveAttachments != null
+          ? null
+          : formattedContent,
       timestamp: timestampToString(sentTime),
       edited: edited,
       avatarBuilder: (child) {
@@ -145,9 +160,9 @@ class _TimelineEventViewMessageState extends State<TimelineEventViewMessage>
 
         return child;
       },
-      attachments: attachments != null
+      attachments: effectiveAttachments != null
           ? TimelineEventViewAttachments(
-              attachments: attachments!,
+              attachments: effectiveAttachments,
               previewMedia: widget.previewMedia,
               clientId: currentUserIdentifier,
             )
@@ -319,7 +334,7 @@ class _TimelineEventViewMessageState extends State<TimelineEventViewMessage>
       // still pending (HEAD hasn't returned yet).
       final confirmed = attachments!
           .every((a) => a is ImageAttachment || a is OEmbedAttachment);
-      if (confirmed) formattedContent = null;
+      if (confirmed) _suppressFormattedContent = true;
     } else {
       // Either preview or inline detection is disabled — show URL as text.
       attachments = null;
@@ -337,7 +352,7 @@ class _TimelineEventViewMessageState extends State<TimelineEventViewMessage>
         if (widget.previewMedia && preferences.inlineImageDetection.value) {
           attachments = resolved;
           if (resolved != null) {
-            formattedContent = null;
+            _suppressFormattedContent = true;
             // OEmbed attachment renders the rich embed — suppress the URL
             // preview widget so both don't show at the same time.
             if (resolved.any((a) => a is OEmbedAttachment)) {

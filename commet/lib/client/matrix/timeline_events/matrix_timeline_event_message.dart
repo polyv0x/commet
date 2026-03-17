@@ -227,6 +227,11 @@ class MatrixTimelineEventMessage extends MatrixTimelineEvent
     // For plain text messages that look like a bare URL, fire a HEAD request
     // to verify the MIME type. Show a shimmer placeholder in the meantime.
     if (!preferences.inlineImageDetection.value) return null;
+
+    final room = client.getRoom(event.roomId!);
+    if (room?.isE2EE == true && !preferences.urlPreviewInE2EEChat.value) {
+      return null;
+    }
     if (event.messageType != 'm.text') return null;
 
     final body = event.plaintextBody.trim();

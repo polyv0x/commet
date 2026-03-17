@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:commet/client/components/voip/voip_session.dart';
 import 'package:commet/client/components/voip_room/voip_room_component.dart';
-import 'package:commet/config/build_config.dart';
 import 'package:commet/ui/atoms/shader/metaballs_background.dart';
 import 'package:commet/ui/atoms/shimmer_loading.dart';
 import 'package:commet/ui/organisms/call_view/call.dart';
@@ -76,7 +75,8 @@ class _VoipRoomViewState extends State<VoipRoomView> {
       child: showCall
           ? CallWidget(currentSession!,
               key: ValueKey(currentSession!.sessionId))
-          : KeyedSubtree(key: const ValueKey('unjoined'), child: unjoinedView()),
+          : KeyedSubtree(
+              key: const ValueKey('unjoined'), child: unjoinedView()),
     );
   }
 
@@ -85,18 +85,16 @@ class _VoipRoomViewState extends State<VoipRoomView> {
       fit: StackFit.expand,
       children: [
         const MetaballsBackground(),
-        // Material provides text-rendering context, eliminating debug underlines.
-        Material(
-          color: Colors.transparent,
-          child: Column(
-            children: [
-              Expanded(
-                child: widget.voip.room.isE2EE && BuildConfig.RELEASE
-                    ? _e2eeUnsupportedView()
-                    : _joinContent(),
-              ),
-              _encryptionFooter(),
-            ],
+        SafeArea(
+          minimum: const EdgeInsets.all(12),
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              children: [
+                Expanded(child: _joinContent()),
+                _encryptionFooter(),
+              ],
+            ),
           ),
         ),
       ],
@@ -150,8 +148,7 @@ class _VoipRoomViewState extends State<VoipRoomView> {
             Padding(
               padding: const EdgeInsets.fromLTRB(32, 0, 32, 16),
               child: tiamat.Text.error(
-                  'End-to-end encrypted calls are still under development, '
-                  'and may contain bugs or security issues. Use at your own risk.'),
+                  'End-to-end encrypted calls are in alpha — you may experience issues.'),
             ),
 
           if (widget.voip.canJoinCall)
@@ -161,8 +158,8 @@ class _VoipRoomViewState extends State<VoipRoomView> {
                 backgroundColor: Colors.white.withAlpha(38),
                 shadowColor: Colors.transparent,
                 side: BorderSide(color: Colors.white.withAlpha(80)),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 32, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
               ).copyWith(
                 mouseCursor:
                     const WidgetStatePropertyAll(SystemMouseCursors.click),
@@ -180,7 +177,8 @@ class _VoipRoomViewState extends State<VoipRoomView> {
           else
             Text(
               'You do not have permission to join this call',
-              style: TextStyle(color: Colors.white.withAlpha(120), fontSize: 13),
+              style:
+                  TextStyle(color: Colors.white.withAlpha(120), fontSize: 13),
             ),
         ],
       ),
@@ -222,10 +220,9 @@ class _VoipRoomViewState extends State<VoipRoomView> {
   }
 
   Widget _encryptionFooter() {
-    final shimmerColor =
-        Theme.of(context).colorScheme.surfaceContainer;
+    final shimmerColor = Theme.of(context).colorScheme.surfaceContainer;
     return Align(
-      alignment: AlignmentGeometry.bottomLeft,
+      alignment: Alignment.bottomLeft,
       child: tiamat.Tooltip(
         text: widget.voip.room.isE2EE
             ? 'This room is encrypted, your call is secure and private'
@@ -259,19 +256,6 @@ class _VoipRoomViewState extends State<VoipRoomView> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _e2eeUnsupportedView() {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text(
-          'Sorry, End-to-end encrypted voice rooms are not yet supported.',
-          style: TextStyle(color: Colors.white),
-          textAlign: TextAlign.center,
         ),
       ),
     );
