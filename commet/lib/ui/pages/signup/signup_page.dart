@@ -11,8 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:tiamat/tiamat.dart' as tiamat;
 
 class SignupPage extends StatefulWidget {
-  const SignupPage({super.key, this.onSuccess});
+  const SignupPage({super.key, this.onSuccess, this.onBack});
   final Function(Client loggedInClient)? onSuccess;
+  final VoidCallback? onBack;
 
   @override
   State<SignupPage> createState() => _SignupPageState();
@@ -54,6 +55,7 @@ class _SignupPageState extends State<SignupPage> {
       loadingServerInfo: loadingServerInfo,
       isServerValid: isServerValid,
       requiresToken: requiresToken,
+      onBack: widget.onBack,
       hasSsoSupport: loginFlows?.whereType<SsoLoginFlow>().isNotEmpty == true,
       updateHomeserver: (value) {
         setState(() {

@@ -1,19 +1,12 @@
-import 'dart:ui';
-
 import 'package:commet/client/auth.dart';
 import 'package:commet/client/client.dart';
 import 'package:commet/config/global_config.dart';
-import 'package:commet/ui/atoms/shader/star_trails.dart';
-import 'package:commet/ui/navigation/navigation_utils.dart';
-import 'package:commet/ui/pages/settings/app_settings_page.dart';
-import 'package:commet/ui/pages/settings/categories/about/settings_category_about.dart';
-import 'package:commet/ui/pages/signup/signup_page.dart';
+import 'package:commet/ui/atoms/animated_entry.dart';
 import 'package:commet/utils/common_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:tiamat/atoms/circle_button.dart';
 import 'package:tiamat/tiamat.dart' as tiamat;
 
 class LoginPageView extends StatefulWidget {
@@ -32,7 +25,8 @@ class LoginPageView extends StatefulWidget {
       this.hasPasswordSupport = false,
       this.canRegister = true,
       this.updateHomeserver,
-      this.onLoginSuccess});
+      this.onLoginSuccess,
+      this.onCreateAccount});
   final bool canNavigateBack;
   final bool isLoggingIn;
   final bool? homeserverChecked;
@@ -50,6 +44,7 @@ class LoginPageView extends StatefulWidget {
 
   final Function(String)? updateHomeserver;
   final Function(Client loggedInClient)? onLoginSuccess;
+  final VoidCallback? onCreateAccount;
 
   @override
   State<LoginPageView> createState() => _LoginPageViewState();
@@ -80,78 +75,17 @@ class _LoginPageViewState extends State<LoginPageView> {
 
   @override
   void initState() {
+    super.initState();
     if (_homeserverTextField.text != "") {
       WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
         _onHomeserverTextUpdated();
       });
     }
-    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-            child: const StarTrailsBackground(),
-          ),
-          SafeArea(
-            child: Stack(
-              children: [
-                Scaffold(
-                  backgroundColor: Colors.transparent,
-                  body: Material(
-                    color: Colors.transparent,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Stack(
-                        children: [
-                          loginField(context),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                if (widget.canNavigateBack)
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Align(
-                        alignment: Alignment.topLeft,
-                        child: CircleButton(
-                          radius: 25,
-                          icon: Icons.arrow_back,
-                          onPressed: () => Navigator.of(context).pop(),
-                        )),
-                  ),
-              ],
-            ),
-          ),
-          SafeArea(
-            child: Align(
-                alignment: Alignment.topRight,
-                child: SizedBox(
-                    height: 30,
-                    width: 30,
-                    child: tiamat.IconButton(
-                      icon: Icons.settings,
-                      onPressed: () => NavigationUtils.navigateTo(
-                          context, const AppSettingsPage()),
-                    ))),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                  0, 0, 0, MediaQuery.of(context).padding.bottom),
-              child: SettingsCategoryAbout.info(context),
-            ),
-          ),
-        ],
-      ),
-    );
+    return loginField(context);
   }
 
   Widget loginField(BuildContext context) {
@@ -215,65 +149,58 @@ class _LoginPageViewState extends State<LoginPageView> {
       ),
       const SizedBox(height: 16),
       homeserverEntry(),
-      const SizedBox(height: 16),
-      if (widget.hasPasswordSupport) usenamePasswordLoginInputs(),
-      if (widget.hasSsoSupport)
-        Flexible(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (widget.hasPasswordSupport)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(
-                        width: 100,
-                        height: 10,
-                        child: tiamat.Seperator(),
-                      ),
-                      tiamat.Text.labelLow(CommonStrings.labelOr),
-                      const SizedBox(
-                        width: 100,
-                        height: 10,
-                        child: tiamat.Seperator(),
-                      ),
-                    ],
-                  ),
+      if (widget.hasPasswordSupport || widget.hasSsoSupport) ...[
+        const SizedBox(height: 16),
+        if (widget.hasPasswordSupport) usenamePasswordLoginInputs(),
+        if (widget.hasSsoSupport) ...[
+          if (widget.hasPasswordSupport)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: AnimatedEntry(
+                delay: const Duration(milliseconds: 150),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(width: 100, height: 10, child: tiamat.Seperator()),
+                    tiamat.Text.labelLow(CommonStrings.labelOr),
+                    const SizedBox(width: 100, height: 10, child: tiamat.Seperator()),
+                  ],
                 ),
-              if (defaultSso != null)
-                tiamat.Button.secondary(
-                  text: "Login with " + defaultSso.name,
-                  onTap: () => {widget.doSsoLogin?.call(defaultSso!)},
+              ),
+            ),
+          if (defaultSso != null)
+            AnimatedEntry(
+              delay: const Duration(milliseconds: 200),
+              child: tiamat.Button.secondary(
+                text: "Login with " + defaultSso.name,
+                onTap: () => widget.doSsoLogin?.call(defaultSso!),
+              ),
+            ),
+          if (ssoFlows != null)
+            AnimatedEntry(
+              delay: const Duration(milliseconds: 250),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: 10,
+                  children: ssoFlows
+                      .whereType<SsoLoginFlow>()
+                      .where((e) => e != defaultSso)
+                      .map((e) => ElevatedButton.icon(
+                            icon: SizedBox(
+                              width: e.icon == null ? 0 : 32,
+                              height: 48,
+                              child: e.icon != null ? Image(image: e.icon!) : null,
+                            ),
+                            label: Text("Continue with ${e.name}"),
+                            onPressed: () => widget.doSsoLogin?.call(e),
+                          ))
+                      .toList(),
                 ),
-              if (ssoFlows != null)
-                Flexible(
-                    child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: 10,
-                    children: ssoFlows
-                        .whereType<SsoLoginFlow>()
-                        .where((e) => e != defaultSso)
-                        .map((e) => ElevatedButton.icon(
-                              icon: SizedBox(
-                                  width: e.icon == null ? 0 : 32,
-                                  height: 48,
-                                  child: e.icon != null
-                                      ? Image(image: e.icon!)
-                                      : null),
-                              label: Text("Continue with ${e.name}"),
-                              onPressed: () => widget.doSsoLogin?.call(e),
-                            ))
-                        .toList(),
-                  ),
-                ))
-            ],
-          ),
-        ),
+              ),
+            ),
+        ],
+      ],
       SizedBox(
         height: 15,
         child: Center(
@@ -293,36 +220,44 @@ class _LoginPageViewState extends State<LoginPageView> {
   Column usenamePasswordLoginInputs() {
     return Column(
       children: [
-        usernameEntry(),
+        AnimatedEntry(child: usernameEntry()),
         const SizedBox(height: 16),
-        passwordEntry(),
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 50),
+          child: passwordEntry(),
+        ),
         const SizedBox(height: 16),
-        loginButton(),
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 100),
+          child: loginButton(),
+        ),
         const SizedBox(height: 8),
         if (widget.canRegister) ...[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(width: 100, height: 10, child: tiamat.Seperator()),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: tiamat.Text.labelLow(CommonStrings.labelOr),
-              ),
-              const SizedBox(width: 100, height: 10, child: tiamat.Seperator()),
-            ],
+          AnimatedEntry(
+            delay: const Duration(milliseconds: 150),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(width: 100, height: 10, child: tiamat.Seperator()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: tiamat.Text.labelLow(CommonStrings.labelOr),
+                ),
+                const SizedBox(width: 100, height: 10, child: tiamat.Seperator()),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: tiamat.Button.secondary(
-              text: "Create account",
-              onTap: () => NavigationUtils.navigateTo(
-                  context,
-                  SignupPage(
-                    onSuccess: widget.onLoginSuccess,
-                  )),
+          AnimatedEntry(
+            delay: const Duration(milliseconds: 200),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: tiamat.Button.secondary(
+                text: "Create account",
+                onTap: widget.onCreateAccount,
+              ),
             ),
           ),
         ],

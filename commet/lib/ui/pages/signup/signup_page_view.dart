@@ -1,8 +1,6 @@
-import 'dart:ui';
-
 import 'package:commet/client/auth.dart';
 import 'package:commet/config/global_config.dart';
-import 'package:commet/ui/atoms/shader/star_trails.dart';
+import 'package:commet/ui/atoms/animated_entry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -21,6 +19,7 @@ class SignupPageView extends StatefulWidget {
     this.hasSsoSupport = false,
     this.requiresToken = false,
     required this.isRegistering,
+    this.onBack,
   });
 
   final double? progress;
@@ -30,6 +29,7 @@ class SignupPageView extends StatefulWidget {
   final bool isServerValid;
   final bool hasSsoSupport;
   final bool requiresToken;
+  final VoidCallback? onBack;
   final Future<void> Function(String username, String password,
       {String? token})? doRegister;
   final Future<void> Function(SsoLoginFlow flow)? doSsoLogin;
@@ -61,33 +61,7 @@ class _SignupPageViewState extends State<SignupPageView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-            child: const StarTrailsBackground(),
-          ),
-          SafeArea(
-            child: Stack(
-              children: [
-                Scaffold(
-                  backgroundColor: Colors.transparent,
-                  body: Material(
-                    color: Colors.transparent,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: _card(context),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    return _card(context);
   }
 
   Widget _card(BuildContext context) {
@@ -205,65 +179,79 @@ class _SignupPageViewState extends State<SignupPageView> {
         ],
 
         // Username
-        TextField(
-          autocorrect: false,
-          controller: _usernameField,
-          readOnly: widget.isRegistering,
-          inputFormatters: [FilteringTextInputFormatter.deny(RegExp("[ ]"))],
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: "Username",
+        AnimatedEntry(
+          child: TextField(
+            autocorrect: false,
+            controller: _usernameField,
+            readOnly: widget.isRegistering,
+            inputFormatters: [FilteringTextInputFormatter.deny(RegExp("[ ]"))],
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: "Username",
+            ),
           ),
         ),
         const SizedBox(height: 16),
 
         // Password
-        TextField(
-          autocorrect: false,
-          controller: _passwordField,
-          obscureText: true,
-          readOnly: widget.isRegistering,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: "Password",
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 50),
+          child: TextField(
+            autocorrect: false,
+            controller: _passwordField,
+            obscureText: true,
+            readOnly: widget.isRegistering,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: "Password",
+            ),
           ),
         ),
         const SizedBox(height: 16),
 
         // Confirm password
-        TextField(
-          autocorrect: false,
-          controller: _confirmPasswordField,
-          obscureText: true,
-          readOnly: widget.isRegistering,
-          decoration: InputDecoration(
-            border: const OutlineInputBorder(),
-            labelText: "Confirm password",
-            errorText: _passwordError,
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 100),
+          child: TextField(
+            autocorrect: false,
+            controller: _confirmPasswordField,
+            obscureText: true,
+            readOnly: widget.isRegistering,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              labelText: "Confirm password",
+              errorText: _passwordError,
+            ),
           ),
         ),
         const SizedBox(height: 16),
 
         // Invite token (only shown when server requires it)
         if (widget.requiresToken) ...[
-          TextField(
-            autocorrect: false,
-            controller: _tokenField,
-            readOnly: widget.isRegistering,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: "Invite token",
+          AnimatedEntry(
+            delay: const Duration(milliseconds: 150),
+            child: TextField(
+              autocorrect: false,
+              controller: _tokenField,
+              readOnly: widget.isRegistering,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: "Invite token",
+              ),
             ),
           ),
           const SizedBox(height: 16),
         ],
 
         // Register button
-        SizedBox(
-          height: 50,
-          child: tiamat.Button.gradient(
-            text: "Create account",
-            onTap: widget.isServerValid ? _onRegisterPressed : null,
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 150),
+          child: SizedBox(
+            height: 50,
+            child: tiamat.Button.gradient(
+              text: "Create account",
+              onTap: widget.isServerValid ? _onRegisterPressed : null,
+            ),
           ),
         ),
 
@@ -287,8 +275,9 @@ class _SignupPageViewState extends State<SignupPageView> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               tiamat.Text.labelLow("Already have an account?"),
+              const SizedBox(width: 4),
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: widget.onBack ?? () => Navigator.of(context).pop(),
                 child: const Text("Sign in"),
               ),
             ],

@@ -1,14 +1,21 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:commet/client/auth.dart';
 import 'package:commet/client/client.dart';
 import 'package:commet/client/matrix/matrix_client.dart';
 import 'package:commet/main.dart';
+import 'package:commet/ui/atoms/shader/star_trails.dart';
+import 'package:commet/ui/navigation/navigation_utils.dart';
 import 'package:commet/ui/pages/login/login_page_view.dart';
+import 'package:commet/ui/pages/settings/app_settings_page.dart';
+import 'package:commet/ui/pages/settings/categories/about/settings_category_about.dart';
+import 'package:commet/ui/pages/signup/signup_page.dart';
 import 'package:commet/utils/debounce.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:commet/ui/navigation/adaptive_dialog.dart' show AdaptiveDialog, DialogType;
+import 'package:tiamat/atoms/circle_button.dart';
 import 'package:tiamat/tiamat.dart' as tiamat;
 
 class LoginPage extends StatefulWidget {
@@ -53,6 +60,7 @@ class LoginPageState extends State<LoginPage> {
   bool isServerValid = false;
   bool isLoggingIn = false;
   bool canRegister = true;
+  bool _showSignup = false;
 
   @override
   void initState() {
@@ -70,28 +78,111 @@ class LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LoginPageView(
-      canNavigateBack: widget.canNavigateBack,
-      progress: progress,
-      updateHomeserver: (value) {
-        setState(() {
-          loginFlows = null;
-          isServerValid = false;
-          loadingServerInfo = true;
-        });
-        homeserverUpdateDebouncer.run(() => updateHomeserver(value));
-      },
-      flows: loginFlows,
-      doSsoLogin: doSsoLogin,
-      doPasswordLogin: doPasswordLogin,
-      isLoggingIn: isLoggingIn,
-      loadingServerInfo: loadingServerInfo,
-      hasSsoSupport: loginFlows?.whereType<SsoLoginFlow>().isNotEmpty == true,
-      hasPasswordSupport:
-          loginFlows?.whereType<PasswordLoginFlow>().isNotEmpty == true,
-      isServerValid: isServerValid,
-      canRegister: canRegister,
-      onLoginSuccess: widget.onSuccess,
+    final card = _showSignup
+        ? SignupPage(
+            key: const ValueKey('signup'),
+            onSuccess: widget.onSuccess,
+            onBack: () => setState(() => _showSignup = false),
+          )
+        : LoginPageView(
+            key: const ValueKey('login'),
+            canNavigateBack: widget.canNavigateBack,
+            progress: progress,
+            updateHomeserver: (value) {
+              setState(() {
+                loginFlows = null;
+                isServerValid = false;
+                loadingServerInfo = true;
+              });
+              homeserverUpdateDebouncer.run(() => updateHomeserver(value));
+            },
+            flows: loginFlows,
+            doSsoLogin: doSsoLogin,
+            doPasswordLogin: doPasswordLogin,
+            isLoggingIn: isLoggingIn,
+            loadingServerInfo: loadingServerInfo,
+            hasSsoSupport:
+                loginFlows?.whereType<SsoLoginFlow>().isNotEmpty == true,
+            hasPasswordSupport:
+                loginFlows?.whereType<PasswordLoginFlow>().isNotEmpty == true,
+            isServerValid: isServerValid,
+            canRegister: canRegister,
+            onLoginSuccess: widget.onSuccess,
+            onCreateAccount: () => setState(() => _showSignup = true),
+          );
+
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      body: Stack(
+        children: [
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+            child: const StarTrailsBackground(),
+          ),
+          SafeArea(
+            child: Stack(
+              children: [
+                Scaffold(
+                  backgroundColor: Colors.transparent,
+                  body: Material(
+                    color: Colors.transparent,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        switchInCurve: Curves.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        transitionBuilder: (child, animation) =>
+                            ScaleTransition(
+                              scale: Tween<double>(begin: 0.96, end: 1.0)
+                                  .animate(animation),
+                              child: FadeTransition(
+                                  opacity: animation, child: child),
+                            ),
+                        child: card,
+                      ),
+                    ),
+                  ),
+                ),
+                if (widget.canNavigateBack)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: CircleButton(
+                        radius: 25,
+                        icon: Icons.arrow_back,
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: SizedBox(
+                height: 30,
+                width: 30,
+                child: tiamat.IconButton(
+                  icon: Icons.settings,
+                  onPressed: () => NavigationUtils.navigateTo(
+                      context, const AppSettingsPage()),
+                ),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                  0, 0, 0, MediaQuery.of(context).padding.bottom),
+              child: SettingsCategoryAbout.info(context),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
