@@ -50,7 +50,7 @@ class _VoipRoomViewState extends State<VoipRoomView> {
       setState(() {
         callServerUrl = url;
       });
-    });
+    }).catchError((_) {});
   }
 
   @override

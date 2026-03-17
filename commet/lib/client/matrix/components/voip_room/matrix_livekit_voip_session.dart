@@ -225,9 +225,13 @@ class MatrixLivekitVoipSession implements VoipSession {
     Log.i("Hanging up call");
 
     await Future.wait([
-      clearRoomCallState(),
+      clearRoomCallState().catchError((e) {
+        Log.w("Could not clear room call state (network may be down): $e");
+      }),
       disconnectCall(),
-      stopHeartbeat(),
+      stopHeartbeat().catchError((e) {
+        Log.w("Could not stop heartbeat (network may be down): $e");
+      }),
     ]);
 
     state = VoipState.ended;

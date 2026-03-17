@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:collection/collection.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:commet/client/client.dart';
 import 'package:commet/client/client_manager.dart';
 import 'package:commet/client/components/direct_messages/direct_message_component.dart';
@@ -55,6 +56,9 @@ class MainPageState extends State<MainPage> {
 
   MainPageSubView _currentView = MainPageSubView.home;
 
+  bool isOffline = false;
+  StreamSubscription? onConnectivityChangedSubscription;
+
   StreamSubscription? onSpaceUpdateSubscription;
   StreamSubscription? onRoomUpdateSubscription;
   StreamSubscription? onCallStartedSubscription;
@@ -103,6 +107,10 @@ class MainPageState extends State<MainPage> {
         }
       }
     }
+
+    Connectivity().checkConnectivity().then(_onConnectivityChanged);
+    onConnectivityChangedSubscription =
+        Connectivity().onConnectivityChanged.listen(_onConnectivityChanged);
 
     ServicesBinding.instance.keyboard.addHandler(_onKeyPressed);
 
@@ -159,6 +167,7 @@ class MainPageState extends State<MainPage> {
 
   @override
   void dispose() {
+    onConnectivityChangedSubscription?.cancel();
     onSpaceUpdateSubscription?.cancel();
     onRoomUpdateSubscription?.cancel();
     onCallStartedSubscription?.cancel();
@@ -166,6 +175,13 @@ class MainPageState extends State<MainPage> {
     onClientAddedSubscription?.cancel();
     ServicesBinding.instance.keyboard.removeHandler(_onKeyPressed);
     super.dispose();
+  }
+
+  void _onConnectivityChanged(List<ConnectivityResult> results) {
+    if (!mounted) return;
+    setState(() {
+      isOffline = results.every((r) => r == ConnectivityResult.none);
+    });
   }
 
   void onClientRemoved(dynamic event) {
@@ -202,11 +218,42 @@ class MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (Layout.mobile) {
-      return MainPageViewMobile(this);
-    } else {
-      return MainPageViewDesktop(this);
-    }
+    final view =
+        Layout.mobile ? MainPageViewMobile(this) : MainPageViewDesktop(this);
+
+    return Column(
+      children: [
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: isOffline ? _connectivityBanner(context) : const SizedBox.shrink(),
+        ),
+        Expanded(child: view),
+      ],
+    );
+  }
+
+  Widget _connectivityBanner(BuildContext context) {
+    return Material(
+      color: Theme.of(context).colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            Icon(Icons.wifi_off,
+                size: 16,
+                color: Theme.of(context).colorScheme.onErrorContainer),
+            const SizedBox(width: 8),
+            Text(
+              'No network connectivity',
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                  fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void selectSpace(Space? space) {

@@ -115,17 +115,19 @@ class MatrixUserPresenceComponent
     final self = client.self!.identifier;
     if (!self.startsWith('@')) return;
 
-    final current = await client.matrixClient.getPresence(self);
+    try {
+      final current = await client.matrixClient.getPresence(self);
 
-    await client.matrixClient.setPresence(
-        self,
-        statusMsg: clearMessage ? null : message ?? current.statusMsg,
-        switch (status) {
-          UserPresenceStatus.offline => PresenceType.offline,
-          UserPresenceStatus.unknown => PresenceType.offline,
-          UserPresenceStatus.online => PresenceType.online,
-          UserPresenceStatus.unavailable => PresenceType.unavailable,
-        });
+      await client.matrixClient.setPresence(
+          self,
+          statusMsg: clearMessage ? null : message ?? current.statusMsg,
+          switch (status) {
+            UserPresenceStatus.offline => PresenceType.offline,
+            UserPresenceStatus.unknown => PresenceType.offline,
+            UserPresenceStatus.online => PresenceType.online,
+            UserPresenceStatus.unavailable => PresenceType.unavailable,
+          });
+    } catch (_) {}
   }
 
   void onSync(SyncUpdate event) {

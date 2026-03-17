@@ -13,6 +13,7 @@ dependencies:
     path: ../widgets/calendar
   matrix_widget_api:
     path: ../widgets/matrix_widget_api
+  connectivity_plus: ^6.1.4
   crypto: ^3.0.2
   desktop_drop: ^0.4.1
   desktop_notifications: ^0.6.3
