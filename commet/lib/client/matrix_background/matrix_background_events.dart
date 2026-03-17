@@ -14,6 +14,9 @@ class MatrixBackgroundTimelineEventMessage implements TimelineEventMessage {
   List<Attachment>? get attachments => null;
 
   @override
+  Future<List<Attachment>?>? get pendingAttachments => null;
+
+  @override
   String? get body => event.content.toString();
 
   @override

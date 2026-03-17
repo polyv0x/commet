@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:commet/config/build_config.dart';
+import 'package:commet/main.dart' show preferences;
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
@@ -48,6 +49,12 @@ class _GifPickerState extends State<GifPicker> {
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
+    final count = searchResult?.length ?? 0;
+    searchResult?.forEach(
+        (r) => NetworkImage(r.fullResUrl.toString()).evict());
+    if (preferences.developerMode.value) {
+      debugPrint('[GifPicker] disposed — evicted $count GIFs from image cache');
+    }
     super.dispose();
   }
 
@@ -136,26 +143,20 @@ class _GifPickerState extends State<GifPicker> {
   Widget build(BuildContext context) {
     return Stack(children: [
       buildContent(context),
-      IgnorePointer(
-        ignoring: !sending,
-        child: AnimatedOpacity(
-          opacity: sending ? 1 : 0,
-          duration: const Duration(milliseconds: 100),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(
-                sigmaX: 2, sigmaY: 2, tileMode: TileMode.repeated),
-            child: Container(
-              color: Colors.black.withAlpha(100),
-              child: const Center(
-                  child: SizedBox(
-                width: 50,
-                height: 50,
-                child: CircularProgressIndicator(),
-              )),
-            ),
+      if (sending)
+        BackdropFilter(
+          filter: ImageFilter.blur(
+              sigmaX: 2, sigmaY: 2, tileMode: TileMode.repeated),
+          child: Container(
+            color: Colors.black.withAlpha(100),
+            child: const Center(
+                child: SizedBox(
+              width: 50,
+              height: 50,
+              child: CircularProgressIndicator(),
+            )),
           ),
         ),
-      ),
     ]);
   }
 
@@ -265,6 +266,15 @@ class _GifGridItem extends StatefulWidget {
 class _GifGridItemState extends State<_GifGridItem> {
   bool isLoading = true;
   Widget? _frozenFrame;
+
+  @override
+  void dispose() {
+    if (preferences.developerMode.value) {
+      debugPrint('[GifPicker] grid item evicted: ${widget.result.fullResUrl}');
+    }
+    NetworkImage(widget.result.fullResUrl.toString()).evict();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

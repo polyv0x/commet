@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:commet/main.dart' show preferences;
 import 'package:commet/utils/image_utils.dart';
 import 'package:commet/utils/mime.dart';
 import 'package:flutter/foundation.dart';
@@ -72,7 +73,8 @@ class LODImageProvider extends ImageProvider<String> {
         hasCachedThumbnail: hasCachedThumbnail,
         thumbnailHeight: thumbnailHeight,
         fullResHeight: fullResHeight,
-        autoLoadFullres: autoLoadFullRes);
+        autoLoadFullres: autoLoadFullRes)
+      ..debugLabel = key;
     return completer!;
   }
 
@@ -245,6 +247,17 @@ class LODImageCompleter extends ImageStreamCompleter {
 
     _nextFrame = await _codec!.getNextFrame();
 
+    if (_framesEmitted == 0 && preferences.developerMode.value) {
+      final estimatedMb = (_nextFrame!.image.width *
+              _nextFrame!.image.height *
+              4 *
+              _codec!.frameCount) /
+          1024 /
+          1024;
+      debugPrint(
+          '[LODImage] first frame: $debugLabel — ${_codec!.frameCount} frames, '
+          '~${estimatedMb.toStringAsFixed(1)} MB estimated');
+    }
     _emitFrame(ImageInfo(
       image: _nextFrame!.image.clone(),
       scale: _scale,
@@ -273,7 +286,11 @@ class LODImageCompleter extends ImageStreamCompleter {
     if (!hasListeners) {
       return;
     }
-    assert(_nextFrame != null);
+    // _nextFrame can be null if a listener was removed and re-added while
+    // _decodeNextFrameAndSchedule was mid-await — the already-registered
+    // callback fires before the new frame is ready. Bail out; the decode
+    // in progress will reschedule once it completes.
+    if (_nextFrame == null) return;
     if (_isFirstFrame() || _hasFrameDurationPassed(timestamp)) {
       _emitFrame(ImageInfo(
         image: _nextFrame!.image.clone(),
@@ -302,6 +319,9 @@ class LODImageCompleter extends ImageStreamCompleter {
     if (!hasListeners &&
         _codec != null &&
         (currentImage == null || _codec!.frameCount > 1)) {
+      if (_codec!.frameCount > 1 && preferences.developerMode.value) {
+        debugPrint('[LODImage] resume animation: $debugLabel');
+      }
       _decodeNextFrameAndSchedule();
     }
     super.addListener(listener);
@@ -313,6 +333,9 @@ class LODImageCompleter extends ImageStreamCompleter {
     if (!hasListeners) {
       _timer?.cancel();
       _timer = null;
+      if (_codec != null && _codec!.frameCount > 1 && preferences.developerMode.value) {
+        debugPrint('[LODImage] paused (no listeners): $debugLabel');
+      }
     }
   }
 

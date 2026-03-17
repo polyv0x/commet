@@ -17,3 +17,4 @@ widgets/calendar/android/local.properties
 /nginx/
 /.build-cache/pub-cache
 /CLAUDE.md
+/commet/assets/config/global_config.json

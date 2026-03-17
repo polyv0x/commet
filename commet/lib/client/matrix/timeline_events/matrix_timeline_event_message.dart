@@ -1,6 +1,9 @@
 import 'dart:math';
 
+import 'package:commet/cache/file_provider.dart';
 import 'package:commet/client/attachment.dart';
+import 'package:commet/main.dart' show preferences;
+import 'package:http/http.dart' as http;
 import 'package:commet/client/matrix/components/threads/matrix_thread_timeline.dart';
 import 'package:commet/client/matrix/extensions/matrix_event_extensions.dart';
 import 'package:commet/client/matrix/matrix_mxc_file_provider.dart';
@@ -14,6 +17,7 @@ import 'package:commet/client/timeline_events/timeline_event_message.dart';
 import 'package:commet/config/platform_utils.dart';
 import 'package:commet/ui/atoms/rich_text/matrix_html_parser.dart';
 import 'package:commet/utils/mime.dart';
+import 'package:commet/utils/oembed.dart';
 import 'package:commet/utils/text_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:matrix/matrix.dart' as matrix;
@@ -24,13 +28,18 @@ class MatrixTimelineEventMessage extends MatrixTimelineEvent
     with MatrixTimelineEventRelated, MatrixTimelineEventReactions
     implements TimelineEventMessage {
   MatrixTimelineEventMessage(super.event, {required super.client}) {
-    attachments = _parseAnyAttachments();
+    attachments = _parseAnyAttachments() ?? _parseInlineImage();
   }
 
   matrix.Client get mx => client.getMatrixClient();
 
   @override
   late List<Attachment>? attachments;
+
+  Future<List<Attachment>?>? _pendingAttachments;
+
+  @override
+  Future<List<Attachment>?>? get pendingAttachments => _pendingAttachments;
 
   @override
   bool get editable => true;
@@ -188,6 +197,104 @@ class MatrixTimelineEventMessage extends MatrixTimelineEvent
       }
 
       return List.from([attachment]);
+    }
+
+    return null;
+  }
+
+  List<Attachment>? _parseInlineImage() {
+    // Commet-sent GIFs carry full metadata — always render regardless of the
+    // inlineImageDetection preference (that gate is only for arbitrary URLs).
+    final inlineImage =
+        event.content['com.commet.inline_image'] as Map<String, dynamic>?;
+    if (inlineImage != null) {
+      final url = inlineImage['url'] as String?;
+      final uri = url != null ? Uri.tryParse(url) : null;
+      if (uri != null) {
+        return [
+          ImageAttachment(
+            NetworkImage(url!),
+            UrlFileProvider(uri),
+            name: uri.pathSegments.lastOrNull ?? 'image',
+            mimeType: inlineImage['mimetype'] as String?,
+            width: (inlineImage['w'] as num?)?.toDouble(),
+            height: (inlineImage['h'] as num?)?.toDouble(),
+          )
+        ];
+      }
+    }
+
+    // For plain text messages that look like a bare URL, fire a HEAD request
+    // to verify the MIME type. Show a shimmer placeholder in the meantime.
+    if (!preferences.inlineImageDetection.value) return null;
+    if (event.messageType != 'm.text') return null;
+
+    final body = event.plaintextBody.trim();
+    final uri = Uri.tryParse(body);
+    if (uri == null || !uri.hasScheme) return null;
+
+    _pendingAttachments = _resolveUrlAttachment(uri, body);
+    return [PendingAttachment()];
+  }
+
+  Future<List<Attachment>?> _resolveUrlAttachment(Uri uri, String body) async {
+    // Try oEmbed first for known providers (YouTube, Vimeo, SoundCloud, etc.)
+    final oEmbed = await OEmbedService.fetch(uri);
+    if (oEmbed != null) {
+      return [
+        OEmbedAttachment(
+          originalUrl: body,
+          title: oEmbed.title,
+          authorName: oEmbed.authorName,
+          thumbnailUrl: oEmbed.thumbnailUrl,
+          thumbnailWidth: oEmbed.thumbnailWidth,
+          thumbnailHeight: oEmbed.thumbnailHeight,
+          providerName: oEmbed.providerName,
+        )
+      ];
+    }
+
+    // HEAD-check to confirm the URL is an image.
+    bool headSucceeded = false;
+    try {
+      final response =
+          await http.head(uri).timeout(const Duration(seconds: 10));
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        headSucceeded = true;
+        final contentType = response.headers['content-type'];
+        final mimeType = contentType?.split(';').first.trim().toLowerCase();
+        if (mimeType != null && Mime.imageTypes.contains(mimeType)) {
+          return [
+            ImageAttachment(
+              NetworkImage(body),
+              UrlFileProvider(uri),
+              name: uri.pathSegments.lastOrNull ?? 'image',
+              mimeType: mimeType,
+            )
+          ];
+        }
+        return null;
+      }
+    } on Exception catch (_) {
+      // Network errors and timeouts are expected — fall through to extension
+      // detection. Non-Exception errors (e.g. assertion failures) still throw.
+    }
+
+    // If HEAD failed (server didn't respond), fall back to extension detection.
+    if (!headSucceeded) {
+      final ext =
+          uri.pathSegments.lastOrNull?.split('.').lastOrNull?.toLowerCase();
+      final mimeType = Mime.lookupType('.$ext');
+      if (mimeType != null && Mime.imageTypes.contains(mimeType)) {
+        return [
+          ImageAttachment(
+            NetworkImage(body),
+            UrlFileProvider(uri),
+            name: uri.pathSegments.lastOrNull ?? 'image',
+            mimeType: mimeType,
+          )
+        ];
+      }
     }
 
     return null;

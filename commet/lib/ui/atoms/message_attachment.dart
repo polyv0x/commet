@@ -1,5 +1,6 @@
 import 'package:commet/client/attachment.dart';
 import 'package:commet/config/build_config.dart';
+import 'package:commet/ui/atoms/hover_link.dart';
 import 'package:commet/ui/atoms/lightbox.dart';
 import 'package:commet/ui/atoms/pausable_animated_image.dart';
 import 'package:commet/ui/molecules/audio_player/audio_player.dart';
@@ -8,17 +9,21 @@ import 'package:commet/ui/molecules/video_player/video_player_controller.dart';
 import 'package:commet/utils/background_tasks/background_task_manager.dart';
 import 'package:commet/utils/download_utils.dart';
 import 'package:commet/utils/mime.dart';
+import 'package:commet/utils/links/link_utils.dart';
 import 'package:commet/utils/text_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:tiamat/tiamat.dart';
 import 'package:tiamat/tiamat.dart' as tiamat;
 
 class MessageAttachment extends StatefulWidget {
   const MessageAttachment(this.attachment,
-      {super.key, this.ignorePointer = false, this.previewMedia = false});
+      {super.key,
+      this.ignorePointer = false,
+      this.previewMedia = false,
+      this.clientId});
   final Attachment attachment;
   final bool ignorePointer;
   final bool previewMedia;
+  final String? clientId;
   @override
   State<MessageAttachment> createState() => _MessageAttachmentState();
 }
@@ -35,6 +40,9 @@ class _MessageAttachmentState extends State<MessageAttachment> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.attachment is PendingAttachment) return const _AttachmentShimmer();
+    if (widget.attachment is OEmbedAttachment) return buildOEmbed();
+
     if (widget.previewMedia) {
       if (widget.attachment is ImageAttachment) return buildImage();
       if (widget.attachment is VideoAttachment) {
@@ -103,11 +111,11 @@ class _MessageAttachmentState extends State<MessageAttachment> {
       child: SizedBox(
         height: 200 + 30,
         width: attachment.aspectRatio * 200,
-        child: Panel(
+        child: tiamat.Panel(
             mainAxisSize: MainAxisSize.min,
             header:
                 "${attachment.name} ${attachment.fileSize != null ? "- ${TextUtils.readableFileSize(attachment.fileSize!)}" : ""}",
-            mode: TileType.surfaceContainerLow,
+            mode: tiamat.TileType.surfaceContainerLow,
             padding: 0,
             child: SizedBox(
                 height: 200,
@@ -241,11 +249,146 @@ class _MessageAttachmentState extends State<MessageAttachment> {
     return BackgroundTaskStatus.completed;
   }
 
+  Widget buildOEmbed() {
+    final attachment = widget.attachment as OEmbedAttachment;
+    final uri = Uri.tryParse(attachment.originalUrl);
+    final onTap = uri != null
+        ? () => LinkUtils.open(uri, clientId: widget.clientId, context: context)
+        : null;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 400),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            border: Border(
+              left: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 3,
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (attachment.thumbnailUrl != null)
+                MouseRegion(
+                  cursor: uri != null
+                      ? SystemMouseCursors.click
+                      : MouseCursor.defer,
+                  child: GestureDetector(
+                    onTap: onTap,
+                    child: AspectRatio(
+                      aspectRatio: attachment.thumbnailWidth != null &&
+                              attachment.thumbnailHeight != null
+                          ? attachment.thumbnailWidth! /
+                              attachment.thumbnailHeight!
+                          : 16 / 9,
+                      child: Image.network(
+                        attachment.thumbnailUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (attachment.providerName != null) ...[
+                      tiamat.Text.labelLow(attachment.providerName!),
+                      const SizedBox(height: 2),
+                    ],
+                    if (attachment.title != null)
+                      LinkText(
+                        attachment.title!,
+                        uri: uri,
+                        clientId: widget.clientId,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelLarge!
+                            .copyWith(fontWeight: FontWeight.w400),
+                      ),
+                    if (attachment.authorName != null) ...[
+                      const SizedBox(height: 2),
+                      tiamat.Text.labelLow(
+                        attachment.authorName!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget buildAudio(FileAttachment attachment) {
     return AudioPlayer(
       file: attachment.file,
       fileName: attachment.name,
       fileSize: attachment.fileSize,
+    );
+  }
+}
+
+class _AttachmentShimmer extends StatefulWidget {
+  const _AttachmentShimmer();
+
+  @override
+  State<_AttachmentShimmer> createState() => _AttachmentShimmerState();
+}
+
+class _AttachmentShimmerState extends State<_AttachmentShimmer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+    _opacity = Tween<double>(begin: 0.3, end: 0.7).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _opacity,
+      builder: (context, _) => Opacity(
+        opacity: _opacity.value,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            width: 200,
+            height: 120,
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+          ),
+        ),
+      ),
     );
   }
 }

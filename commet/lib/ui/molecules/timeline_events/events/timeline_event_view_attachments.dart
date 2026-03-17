@@ -4,9 +4,13 @@ import 'package:flutter/material.dart';
 
 class TimelineEventViewAttachments extends StatelessWidget {
   const TimelineEventViewAttachments(
-      {required this.attachments, this.previewMedia = false, super.key});
+      {required this.attachments,
+      this.previewMedia = false,
+      this.clientId,
+      super.key});
   final List<Attachment> attachments;
   final bool previewMedia;
+  final String? clientId;
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +22,7 @@ class TimelineEventViewAttachments extends StatelessWidget {
                   child: MessageAttachment(
                     e,
                     previewMedia: previewMedia,
+                    clientId: clientId,
                   ),
                 ),
               ))

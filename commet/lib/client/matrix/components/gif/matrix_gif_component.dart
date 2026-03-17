@@ -78,6 +78,50 @@ class MatrixGifComponent implements GifComponent<MatrixClient, MatrixRoom> {
   @override
   Future<TimelineEvent?> sendGif(
       GifSearchResult gif, TimelineEvent? inReplyTo) async {
+    final customUrl = preferences.gifSearchUrl.value;
+    if (customUrl != null && customUrl.isNotEmpty) {
+      return _sendGifEmbed(gif, inReplyTo);
+    }
+    return _sendGifUploaded(gif, inReplyTo);
+  }
+
+  /// Sends the GIF as a plain m.text message containing the source URL.
+  /// A com.commet.inline_image field carries the dimensions and mime type so
+  /// Commet can render it inline without a HEAD request. Other clients see a
+  /// plain URL link — fully spec-compliant.
+  Future<TimelineEvent?> _sendGifEmbed(
+      GifSearchResult gif, TimelineEvent? inReplyTo) async {
+    var matrixRoom = room.matrixRoom;
+    matrix.Event? replyingTo;
+    if (inReplyTo != null) {
+      replyingTo = await matrixRoom.getEventById(inReplyTo.eventId);
+    }
+
+    var content = {
+      "msgtype": "m.text",
+      "body": gif.fullResUrl.toString(),
+      "com.commet.inline_image": {
+        "url": gif.fullResUrl.toString(),
+        "mimetype": gif.mimeType,
+        "w": gif.x.toInt(),
+        "h": gif.y.toInt(),
+      }
+    };
+
+    var id = await matrixRoom.sendEvent(content,
+        type: matrix.EventTypes.Message,
+        inReplyTo: replyingTo);
+
+    if (id != null) {
+      var event = await matrixRoom.getEventById(id);
+      return room.convertEvent(event!,
+          timeline: (room.timeline as MatrixTimeline).matrixTimeline);
+    }
+    return null;
+  }
+
+  Future<TimelineEvent?> _sendGifUploaded(
+      GifSearchResult gif, TimelineEvent? inReplyTo) async {
     var matrixRoom = room.matrixRoom;
     var response = await matrixRoom.client.httpClient.get(gif.fullResUrl);
     if (response.statusCode == 200) {

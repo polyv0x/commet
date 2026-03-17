@@ -11,6 +11,37 @@ abstract class Attachment {
   late String name;
 }
 
+class OEmbedAttachment implements Attachment {
+  @override
+  String name;
+  final String originalUrl;
+  final String? title;
+  final String? authorName;
+  final String? thumbnailUrl;
+  final double? thumbnailWidth;
+  final double? thumbnailHeight;
+  final String? providerName;
+
+  OEmbedAttachment({
+    required this.originalUrl,
+    this.title,
+    this.authorName,
+    this.thumbnailUrl,
+    this.thumbnailWidth,
+    this.thumbnailHeight,
+    this.providerName,
+  }) : name = title ?? originalUrl;
+}
+
+/// Placeholder attachment shown while async attachment detection (e.g. a HEAD
+/// request to verify the MIME type of a URL) is in progress.
+class PendingAttachment implements Attachment {
+  @override
+  String get name => '';
+  @override
+  set name(String _) {}
+}
+
 abstract class ProcessedAttachment {}
 
 class PendingFileAttachment {

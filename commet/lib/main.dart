@@ -189,7 +189,15 @@ WidgetsBinding ensureBindingInit() {
     },
   );
 
-  return WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+
+  // Cap the image cache at 100 entries (default 1000). Each animated GIF codec
+  // holds its compressed data in memory; without sizeBytes tracking, the cache
+  // uses only the entry count to decide when to evict. 100 is enough for a
+  // visible timeline plus scroll buffer while preventing unbounded accumulation.
+  PaintingBinding.instance.imageCache.maximumSize = 100;
+
+  return binding;
 }
 
 /// Initializes the bare necessities for the app to run in headless mode

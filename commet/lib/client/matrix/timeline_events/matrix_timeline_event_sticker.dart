@@ -16,6 +16,7 @@ class MatrixTimelineEventSticker extends MatrixTimelineEvent
       var file = event.content['file'] as Map<String, dynamic>;
       uri = file['url'];
     }
+
     stickerImage = MatrixMxcImage(Uri.parse(uri!), client.getMatrixClient(),
         matrixEvent: event);
 

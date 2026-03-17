@@ -268,6 +268,9 @@ class Preferences {
   BoolPreference urlPreviewInE2EEChat =
       BoolPreference("use_url_preview_in_e2ee_chat", defaultValue: false);
 
+  BoolPreference allowUnauthenticatedUrlPreview =
+      BoolPreference("allow_unauthenticated_url_preview", defaultValue: false);
+
   BoolPreference messageEffectsEnabled =
       BoolPreference("message_effects_enabled", defaultValue: true);
 
@@ -368,6 +371,9 @@ class Preferences {
 
   NullableStringPreference gifSearchUrl =
       NullableStringPreference("gif_search_url", defaultValue: null);
+
+  BoolPreference inlineImageDetection =
+      BoolPreference("inline_image_detection", defaultValue: true);
 
   StringPreference fallbackTurnServer = StringPreference("fallback_turn_server",
       defaultValue: "stun:turn.matrix.org");

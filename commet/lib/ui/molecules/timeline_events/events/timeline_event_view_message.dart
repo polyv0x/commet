@@ -149,6 +149,7 @@ class _TimelineEventViewMessageState extends State<TimelineEventViewMessage>
           ? TimelineEventViewAttachments(
               attachments: attachments!,
               previewMedia: widget.previewMedia,
+              clientId: currentUserIdentifier,
             )
           : null,
       readReceipts: room != null
@@ -277,12 +278,78 @@ class _TimelineEventViewMessageState extends State<TimelineEventViewMessage>
     }
 
     attachments = event.attachments;
+    _applyInlineImagePreviewPolicy(event);
+    _resolvePendingAttachments(event);
 
     doUrlPreview = widget.timeline != null &&
         previewComponent?.shouldGetPreviewDataForTimelineEvent(
                 widget.timeline!, event) ==
             true &&
         event.getLinks(timeline: widget.timeline!)?.isEmpty == false;
+  }
+
+  /// For URL-only inline image messages (com.commet.inline_image or plain URL
+  /// that passed the HEAD check), enforce the media preview preference:
+  /// - preview ON  → show the image, suppress the URL text
+  /// - preview OFF → show the URL as text, suppress the image/file chip
+  void _applyInlineImagePreviewPolicy(TimelineEvent event) {
+    if (event is! TimelineEventMessage) return;
+    if (attachments == null || attachments!.isEmpty) return;
+
+    final onlyEmbeds = attachments!.every(
+        (a) => a is ImageAttachment || a is OEmbedAttachment || a is PendingAttachment);
+    if (!onlyEmbeds) return;
+
+    final body = event.plainTextBody.trim();
+    final isUrlBody =
+        body.isNotEmpty && Uri.tryParse(body)?.hasScheme == true;
+
+    if (!isUrlBody) return;
+
+    final showInline =
+        widget.previewMedia && preferences.inlineImageDetection.value;
+
+    if (preferences.developerMode.value) {
+      debugPrint(
+          '[InlineImage] policy: previewMedia=${widget.previewMedia} inlineImageDetection=${preferences.inlineImageDetection.value} showInline=$showInline');
+    }
+
+    if (showInline) {
+      // Only suppress the URL text once we have a confirmed embed — not while
+      // still pending (HEAD hasn't returned yet).
+      final confirmed = attachments!
+          .every((a) => a is ImageAttachment || a is OEmbedAttachment);
+      if (confirmed) formattedContent = null;
+    } else {
+      // Either preview or inline detection is disabled — show URL as text.
+      attachments = null;
+    }
+  }
+
+  void _resolvePendingAttachments(TimelineEvent event) async {
+    if (event is! TimelineEventMessage) return;
+    final future = event.pendingAttachments;
+    if (future == null) return;
+    final resolvedEventId = event.eventId;
+    final resolved = await future;
+    if (mounted && eventId == resolvedEventId) {
+      setState(() {
+        if (widget.previewMedia && preferences.inlineImageDetection.value) {
+          attachments = resolved;
+          if (resolved != null) {
+            formattedContent = null;
+            // OEmbed attachment renders the rich embed — suppress the URL
+            // preview widget so both don't show at the same time.
+            if (resolved.any((a) => a is OEmbedAttachment)) {
+              doUrlPreview = false;
+            }
+          }
+        } else {
+          // Preview disabled — discard the result and keep the URL text.
+          attachments = null;
+        }
+      });
+    }
   }
 
   void _loadSenderAvatar(String userId) async {

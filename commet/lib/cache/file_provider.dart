@@ -20,6 +20,43 @@ abstract class FileProvider {
   String get fileIdentifier;
 }
 
+class UrlFileProvider implements FileProvider {
+  final Uri url;
+
+  UrlFileProvider(this.url);
+
+  @override
+  String get fileIdentifier => url.toString();
+
+  @override
+  Future<Uri?> resolve() async => url;
+
+  @override
+  Stream<DownloadProgress>? get onProgressChanged => null;
+
+  @override
+  Future<Uint8List?> getFileData() async {
+    final client = HttpClient();
+    try {
+      final request = await client.getUrl(url);
+      final response = await request.close();
+      final bytes = <int>[];
+      await for (final chunk in response) {
+        bytes.addAll(chunk);
+      }
+      return Uint8List.fromList(bytes);
+    } finally {
+      client.close();
+    }
+  }
+
+  @override
+  Future<void> save(String filepath) async {
+    final data = await getFileData();
+    if (data != null) await File(filepath).writeAsBytes(data);
+  }
+}
+
 class SystemFileProvider implements FileProvider {
   File file;
 

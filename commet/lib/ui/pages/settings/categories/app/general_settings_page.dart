@@ -38,6 +38,16 @@ class GeneralSettingsPageState extends State<GeneralSettingsPage> {
       args: [proxyUrl],
       name: "labelGifSearchDescription");
 
+  String get labelInlineImageDetectionTitle =>
+      Intl.message("Inline image detection",
+          desc: "Label for the toggle that controls inline image detection",
+          name: "labelInlineImageDetectionTitle");
+
+  String get labelInlineImageDetectionDescription => Intl.message(
+      "Detect image URLs in messages and render them inline. May send a HEAD request per link to check the content type.",
+      desc: "Description for the inline image detection setting",
+      name: "labelInlineImageDetectionDescription");
+
   String get labelUrlPreviewInEncryptedChatTitle => Intl.message(
       "URL Preview in Encrypted Chats",
       desc:
@@ -49,6 +59,17 @@ class GeneralSettingsPageState extends State<GeneralSettingsPage> {
       desc:
           "description for the toggle for enabling and disabling use of url previews in encrypted chats",
       name: "labelUrlPreviewInEncryptedChatDescription");
+
+  String get labelAllowUnauthenticatedUrlPreviewTitle => Intl.message(
+      "Allow Unauthenticated URL Preview",
+      desc: "Label for the toggle to allow unauthenticated URL preview requests",
+      name: "labelAllowUnauthenticatedUrlPreviewTitle");
+
+  String get labelAllowUnauthenticatedUrlPreviewDescription => Intl.message(
+      "Fall back to the unauthenticated URL preview endpoint if the authenticated one is unavailable. Less secure — only enable if previews are not working.",
+      desc:
+          "Description for the toggle to allow unauthenticated URL preview requests",
+      name: "labelAllowUnauthenticatedUrlPreviewDescription");
 
   String get labelAppBehaviourTitle => Intl.message("App Behaviour",
       desc: "Header for the app behaviour section in settings",
@@ -154,6 +175,11 @@ class GeneralSettingsPageState extends State<GeneralSettingsPage> {
               title: labelUrlPreviewInEncryptedChatTitle,
               description: labelUrlPreviewInEncryptedChatDescription,
             ),
+            BooleanPreferenceToggle(
+              preference: preferences.allowUnauthenticatedUrlPreview,
+              title: labelAllowUnauthenticatedUrlPreviewTitle,
+              description: labelAllowUnauthenticatedUrlPreviewDescription,
+            ),
             if (UpdateChecker.shouldCheckForUpdates)
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
@@ -206,6 +232,11 @@ class GeneralSettingsPageState extends State<GeneralSettingsPage> {
           header: labelMediaSettings,
           mode: TileType.surfaceContainerLow,
           child: Column(children: [
+            BooleanPreferenceToggle(
+              preference: preferences.inlineImageDetection,
+              title: labelInlineImageDetectionTitle,
+              description: labelInlineImageDetectionDescription,
+            ),
             BooleanPreferenceToggle(
               preference: preferences.previewMediaInPrivateRooms,
               title: labelMediaPreviewPrivateRoomsToggle,
