@@ -7,6 +7,7 @@ export './atoms/image_button.dart';
 export './atoms/popup_dialog.dart';
 export './atoms/seperator.dart';
 export './atoms/slider.dart';
+export './atoms/level_meter_slider.dart';
 export './atoms/switch.dart';
 export './atoms/tile.dart';
 export './atoms/text_input.dart';

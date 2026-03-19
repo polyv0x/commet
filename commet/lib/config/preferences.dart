@@ -389,6 +389,27 @@ class Preferences {
   NullableStringPreference layoutOverride =
       NullableStringPreference("layout_override", defaultValue: null);
 
+  BoolPreference noiseGateEnabled =
+      BoolPreference("noise_gate_enabled", defaultValue: false);
+
+  // Default threshold: 0.05 linear (~-26 dBFS). Pre-APM mic silence is
+  // typically at -40 to -60 dBFS and speech at -20 to -6 dBFS; 0.05 sits
+  // comfortably between them as a starting point for most setups.
+  DoublePreference noiseGateThreshold =
+      DoublePreference("noise_gate_threshold", defaultValue: 0.05);
+
+  DoublePreference noiseGateHoldMs =
+      DoublePreference("noise_gate_hold_ms", defaultValue: 200);
+
+  DoublePreference noiseGateResidualGain =
+      DoublePreference("noise_gate_residual_gain", defaultValue: 0.05);
+
+  DoublePreference noiseGateAttackMs =
+      DoublePreference("noise_gate_attack_ms", defaultValue: 5.0);
+
+  DoublePreference noiseGateReleaseMs =
+      DoublePreference("noise_gate_release_ms", defaultValue: 80.0);
+
   NullableStringPreference voipDefaultAudioInput =
       NullableStringPreference("voip_default_audio_input", defaultValue: null);
 

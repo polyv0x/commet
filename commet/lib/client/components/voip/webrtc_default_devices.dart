@@ -3,6 +3,7 @@ import 'package:commet/config/platform_utils.dart';
 import 'package:commet/debug/log.dart';
 import 'package:commet/main.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart' as webrtc;
+import 'package:flutter_webrtc_noise_suppressor/flutter_webrtc_noise_suppressor.dart';
 
 class WebrtcDefaultDevices {
   static Future<webrtc.MediaStream?> getDefaultMicrophone() async {
@@ -34,9 +35,38 @@ class WebrtcDefaultDevices {
       print("No default device set picking first");
     }
 
-    return await webrtc.navigator.mediaDevices
+    final stream = await webrtc.navigator.mediaDevices
         .getUserMedia({"audio": constraints});
+
+    await _applyNoiseSuppressor();
+
+    return stream;
   }
+
+  static Future<void> _applyNoiseSuppressor() async {
+    if (PlatformUtils.isWeb || PlatformUtils.isAndroid) return;
+
+    if (preferences.noiseGateEnabled.value) {
+      await NoiseSuppressor.initialize();
+      await NoiseSuppressor.setMode(NoiseProcessingMode.rmsGate);
+      await NoiseSuppressor.configure(
+        threshold: preferences.noiseGateThreshold.value,
+        holdMs: preferences.noiseGateHoldMs.value.toInt(),
+        residualGain: preferences.noiseGateResidualGain.value,
+        attackMs: preferences.noiseGateAttackMs.value,
+        releaseMs: preferences.noiseGateReleaseMs.value,
+      );
+    } else {
+      try {
+        await NoiseSuppressor.dispose();
+      } catch (_) {}
+    }
+  }
+
+  /// Re-apply noise suppressor settings without restarting the mic stream.
+  /// Call this when noise gate preferences change.
+  static Future<void> applyNoiseSuppressorSettings() =>
+      _applyNoiseSuppressor();
 
   static Future<String?> getDefaultMicrophoneId() async {
     if (PlatformUtils.isAndroid || PlatformUtils.isWeb) return null;

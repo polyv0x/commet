@@ -11,6 +11,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
   flutter_timezone
   flutter_webrtc
+  flutter_webrtc_noise_suppressor
   hotkey_manager_windows
   livekit_client
   media_kit_libs_windows_video

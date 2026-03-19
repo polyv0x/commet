@@ -9,6 +9,7 @@ import 'package:commet/main.dart';
 import 'package:commet/ui/pages/settings/categories/app/boolean_toggle.dart';
 import 'package:commet/ui/pages/settings/categories/app/double_preference_slider.dart';
 import 'package:commet/ui/pages/settings/categories/app/string_preference_options.dart';
+import 'package:commet/ui/pages/settings/categories/app/voip_settings/noise_gate_settings.dart';
 import 'package:commet/ui/pages/settings/categories/app/voip_settings/voip_debug_settings.dart';
 import 'package:flutter/widgets.dart';
 
@@ -72,6 +73,12 @@ class _VoipSettingsPage extends State<VoipSettingsPage> {
           mode: tiamat.TileType.surfaceContainerLow,
           child: devicePicker(),
         ),
+        if (!PlatformUtils.isWeb)
+          tiamat.Panel(
+            header: "Noise Gate",
+            mode: tiamat.TileType.surfaceContainerLow,
+            child: const NoiseGateSettings(),
+          ),
         tiamat.Panel(
             header: "Stream Settings",
             mode: tiamat.TileType.surfaceContainerLow,
