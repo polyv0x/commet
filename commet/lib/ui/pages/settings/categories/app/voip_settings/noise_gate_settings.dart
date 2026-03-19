@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
+
 import 'package:commet/client/components/voip/webrtc_default_devices.dart';
 import 'package:commet/config/platform_utils.dart';
 import 'package:commet/main.dart';
@@ -127,7 +129,10 @@ class _NoiseGateSettingsState extends State<NoiseGateSettings> {
         final smoothed = alpha * clamped + (1 - alpha) * _currentLevel;
         if (mounted) setState(() => _currentLevel = smoothed);
       });
-    } catch (_) {}
+    } catch (e, s) {
+      debugPrint('_startMonitoring error: $e');
+      debugPrint('$s');
+    }
   }
 
   Future<void> _stopMonitoring() async {
