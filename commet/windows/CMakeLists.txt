@@ -32,9 +32,6 @@ set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
 
-# Prevent windows.h from defining min/max macros that conflict with std::min/std::max.
-add_definitions(-DNOMINMAX)
-
 # Compilation settings that should be applied to most targets.
 #
 # Be cautious about adding new options here, as plugins use this function by
@@ -58,6 +55,14 @@ add_subdirectory("runner")
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
 include(flutter/generated_plugins.cmake)
+
+# flutter_webrtc_noise_suppressor uses std::min/std::max with fully-qualified
+# names, but the libwebrtc headers transitively include <windows.h> which
+# defines min/max as macros, turning std::min(...) into std::(...).
+# Apply NOMINMAX only to this specific target so other plugins (e.g.
+# desktop_webview_window) that rely on the bare Win32 min/max macros are
+# unaffected.
+target_compile_definitions(flutter_webrtc_noise_suppressor_plugin PRIVATE NOMINMAX)
 
 
 # === Installation ===
