@@ -224,10 +224,8 @@ class MatrixTimelineEventMessage extends MatrixTimelineEvent
       }
     }
 
-    // For plain text messages that look like a bare URL, fire a HEAD request
-    // to verify the MIME type. Show a shimmer placeholder in the meantime.
-    if (!preferences.inlineImageDetection.value) return null;
-
+    // For plain text messages that look like a bare URL, try oEmbed and
+    // optionally a HEAD request. Show a shimmer placeholder in the meantime.
     final room = client.getRoom(event.roomId!);
     if (room?.isE2EE == true && !preferences.urlPreviewInE2EEChat.value) {
       return null;
@@ -238,11 +236,13 @@ class MatrixTimelineEventMessage extends MatrixTimelineEvent
     final uri = Uri.tryParse(body);
     if (uri == null || !uri.hasScheme) return null;
 
-    _pendingAttachments = _resolveUrlAttachment(uri, body);
+    _pendingAttachments =
+        _resolveUrlAttachment(uri, body, preferences.inlineImageDetection.value);
     return [PendingAttachment()];
   }
 
-  Future<List<Attachment>?> _resolveUrlAttachment(Uri uri, String body) async {
+  Future<List<Attachment>?> _resolveUrlAttachment(
+      Uri uri, String body, bool imageDetectionEnabled) async {
     // Try oEmbed first for known providers (YouTube, Vimeo, SoundCloud, etc.)
     final oEmbed = await OEmbedService.fetch(uri);
     if (oEmbed != null) {
@@ -258,6 +258,9 @@ class MatrixTimelineEventMessage extends MatrixTimelineEvent
         )
       ];
     }
+
+    // Inline image detection (HEAD request) is a separate opt-in.
+    if (!imageDetectionEnabled) return null;
 
     // HEAD-check to confirm the URL is an image.
     bool headSucceeded = false;

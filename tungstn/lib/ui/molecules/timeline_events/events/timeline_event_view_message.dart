@@ -321,23 +321,33 @@ class _TimelineEventViewMessageState extends State<TimelineEventViewMessage>
 
     if (!isUrlBody) return;
 
-    final showInline =
-        widget.previewMedia && preferences.inlineImageDetection.value;
+    if (!widget.previewMedia) {
+      attachments = null;
+      return;
+    }
+
+    final imageDetection = preferences.inlineImageDetection.value;
 
     if (preferences.developerMode.value) {
       debugPrint(
-          '[InlineImage] policy: previewMedia=${widget.previewMedia} inlineImageDetection=${preferences.inlineImageDetection.value} showInline=$showInline');
+          '[InlineImage] policy: previewMedia=${widget.previewMedia} inlineImageDetection=$imageDetection');
     }
 
-    if (showInline) {
-      // Only suppress the URL text once we have a confirmed embed — not while
-      // still pending (HEAD hasn't returned yet).
-      final confirmed = attachments!
-          .every((a) => a is ImageAttachment || a is OEmbedAttachment);
-      if (confirmed) _suppressFormattedContent = true;
-    } else {
-      // Either preview or inline detection is disabled — show URL as text.
-      attachments = null;
+    // Always show oEmbeds; only show inline images when imageDetection is on.
+    // PendingAttachment is kept regardless — it may still resolve to an oEmbed.
+    final confirmed =
+        attachments!.every((a) => a is ImageAttachment || a is OEmbedAttachment);
+    if (confirmed) {
+      if (imageDetection ||
+          attachments!.any((a) => a is OEmbedAttachment)) {
+        _suppressFormattedContent = true;
+      }
+      if (!imageDetection) {
+        // Drop any plain image attachments; oEmbeds survive.
+        attachments =
+            attachments!.where((a) => a is OEmbedAttachment).toList();
+        if (attachments!.isEmpty) attachments = null;
+      }
     }
   }
 
@@ -349,19 +359,29 @@ class _TimelineEventViewMessageState extends State<TimelineEventViewMessage>
     final resolved = await future;
     if (mounted && eventId == resolvedEventId) {
       setState(() {
-        if (widget.previewMedia && preferences.inlineImageDetection.value) {
-          attachments = resolved;
-          if (resolved != null) {
-            _suppressFormattedContent = true;
-            // OEmbed attachment renders the rich embed — suppress the URL
-            // preview widget so both don't show at the same time.
-            if (resolved.any((a) => a is OEmbedAttachment)) {
-              doUrlPreview = false;
-            }
-          }
-        } else {
-          // Preview disabled — discard the result and keep the URL text.
+        if (!widget.previewMedia) {
           attachments = null;
+          return;
+        }
+        if (resolved == null) {
+          attachments = null;
+          return;
+        }
+        // Always keep oEmbeds; only keep images when imageDetection is on.
+        final imageDetection = preferences.inlineImageDetection.value;
+        final filtered = resolved
+            .where((a) =>
+                a is OEmbedAttachment ||
+                (a is ImageAttachment && imageDetection))
+            .toList();
+        if (filtered.isEmpty) {
+          attachments = null;
+        } else {
+          attachments = filtered;
+          _suppressFormattedContent = true;
+          if (filtered.any((a) => a is OEmbedAttachment)) {
+            doUrlPreview = false;
+          }
         }
       });
     }

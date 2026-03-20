@@ -192,7 +192,7 @@ class _NoiseGateSettingsState extends State<NoiseGateSettings> {
             onTap: () => setState(() => _showAdvanced = !_showAdvanced),
           ),
           AnimatedCrossFade(
-            duration: const Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 150),
             sizeCurve: Curves.easeInOut,
             firstCurve: Curves.easeInOut,
             secondCurve: Curves.easeInOut,

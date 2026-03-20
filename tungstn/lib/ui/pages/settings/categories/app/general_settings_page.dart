@@ -174,6 +174,25 @@ class GeneralSettingsPageState extends State<GeneralSettingsPage> {
               preference: preferences.urlPreviewInE2EEChat,
               title: labelUrlPreviewInEncryptedChatTitle,
               description: labelUrlPreviewInEncryptedChatDescription,
+              onChanged: (_) => setState(() {}),
+            ),
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 150),
+              sizeCurve: Curves.easeInOut,
+              firstCurve: Curves.easeInOut,
+              secondCurve: Curves.easeInOut,
+              crossFadeState: preferences.urlPreviewInE2EEChat.value
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+              firstChild: Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: BooleanPreferenceToggle(
+                  preference: preferences.inlineImageDetection,
+                  title: labelInlineImageDetectionTitle,
+                  description: labelInlineImageDetectionDescription,
+                ),
+              ),
+              secondChild: const SizedBox(width: double.infinity),
             ),
             BooleanPreferenceToggle(
               preference: preferences.allowUnauthenticatedUrlPreview,
@@ -232,11 +251,6 @@ class GeneralSettingsPageState extends State<GeneralSettingsPage> {
           header: labelMediaSettings,
           mode: TileType.surfaceContainerLow,
           child: Column(children: [
-            BooleanPreferenceToggle(
-              preference: preferences.inlineImageDetection,
-              title: labelInlineImageDetectionTitle,
-              description: labelInlineImageDetectionDescription,
-            ),
             BooleanPreferenceToggle(
               preference: preferences.previewMediaInPrivateRooms,
               title: labelMediaPreviewPrivateRoomsToggle,
