@@ -56,7 +56,7 @@ This repo currently has a monorepo structure, containing two flutter projects: T
 
 ### 2. Install Libraries
 
-Tungsnt requires some additional libraries to be built
+Tungstn requires some additional libraries to be built
 
 ```bash
 sudo apt-get install -y ninja-build libgtk-3-dev libmpv-dev mpv ffmpeg libmimalloc-dev
