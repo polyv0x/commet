@@ -170,7 +170,7 @@ class MatrixCalendar {
 
       var stateKey = event['state_key'] ?? "";
 
-      if (type == "chat.commet.calendar_event" &&
+      if (type == "chat.tungstn.calendar_event" &&
           stateKey == widgetApi.userId) {
         if ((event["content"] as Map<String, dynamic>).isNotEmpty) {
           needsStateMigration = true;
@@ -184,7 +184,7 @@ class MatrixCalendar {
 
       roomState[type]![stateKey] = event;
 
-      if (type == "chat.commet.calendars") {
+      if (type == "chat.tungstn.calendars") {
         readExistingEvents();
       }
     }
@@ -214,18 +214,18 @@ class MatrixCalendar {
 
   void onWidgetReady(void event) async {
     await widgetApi.requestCapabilities([
-      MatrixCapability.getRoomState("chat.commet.calendar_event"),
+      MatrixCapability.getRoomState("chat.tungstn.calendar_event"),
       MatrixCapability.setRoomState(
-        "chat.commet.calendar_event",
+        "chat.tungstn.calendar_event",
         stateKey: widgetApi.userId,
       ),
-      MatrixCapability.getRoomState("chat.commet.calendars"),
-      MatrixCapability.setRoomState("chat.commet.calendars"),
-      MatrixCapability.sendEvent("chat.commet.calendar_events"),
-      MatrixCapability.receiveEvent("chat.commet.calendar_events"),
+      MatrixCapability.getRoomState("chat.tungstn.calendars"),
+      MatrixCapability.setRoomState("chat.tungstn.calendars"),
+      MatrixCapability.sendEvent("chat.tungstn.calendar_events"),
+      MatrixCapability.receiveEvent("chat.tungstn.calendar_events"),
       MatrixCapability.sendEvent("m.room.redaction"),
       MatrixCapability.receiveEvent("m.room.redaction"),
-      MatrixCapability.sendEvent("chat.commet.calendar_create"),
+      MatrixCapability.sendEvent("chat.tungstn.calendar_create"),
     ]);
 
     await readExistingEvents();
@@ -237,7 +237,7 @@ class MatrixCalendar {
 
     var response = await widgetApi.sendAction(FromWidgetAction.readRelations, {
       "event_id": calendarId,
-      "event_type": "chat.commet.calendar_events",
+      "event_type": "chat.tungstn.calendar_events",
       "limit": 100,
       if (nextChunk != null) "from": nextChunk,
       "rel_type": "m.reference",
@@ -359,10 +359,10 @@ class MatrixCalendar {
       await removeAllEventsFromRemoteCalendar(remoteSourceId);
 
       var migratedContent = {
-        "type": "chat.commet.calendar_events",
+        "type": "chat.tungstn.calendar_events",
         "content": {
           "m.relates_to": {"event_id": calenarId, "rel_type": "m.reference"},
-          "format": "chat.commet.calendar.event.rfc8984",
+          "format": "chat.tungstn.calendar.event.rfc8984",
           "remote_source_id": remoteSourceId,
           "events": entry.value
               .map((i) => {
@@ -410,7 +410,7 @@ class MatrixCalendar {
   Future<void> redactEvent(String eventId) async {
     await widgetApi.sendAction(FromWidgetAction.sendEvent, {
       "type": "m.room.redaction",
-      "chat.commet.calendar.redaction": "edit",
+      "chat.tungstn.calendar.redaction": "edit",
       "content": {"redacts": eventId}
     });
   }
@@ -455,10 +455,10 @@ class MatrixCalendar {
     if (calendarId == null) return false;
 
     var result = await widgetApi.sendAction(FromWidgetAction.sendEvent, {
-      "type": "chat.commet.calendar_events",
+      "type": "chat.tungstn.calendar_events",
       "content": {
         "m.relates_to": {"event_id": calendarId, "rel_type": "m.reference"},
-        "format": "chat.commet.calendar.event.rfc8984",
+        "format": "chat.tungstn.calendar.event.rfc8984",
         "events": [
           {
             if (eventType != null) "type": eventType,
@@ -482,7 +482,7 @@ class MatrixCalendar {
   }
 
   Future<String?> getCalendarId({bool createIfNotFound = false}) async {
-    var calendar = roomState["chat.commet.calendars"];
+    var calendar = roomState["chat.tungstn.calendars"];
     print("Getting calendar id, create: $createIfNotFound");
 
     String? calendarId;
@@ -498,7 +498,7 @@ class MatrixCalendar {
 
     if (calendarId == null && createIfNotFound) {
       var result = await widgetApi.sendAction(FromWidgetAction.sendEvent,
-          {"type": "chat.commet.calendar_create", "content": {}});
+          {"type": "chat.tungstn.calendar_create", "content": {}});
 
       print("Sent action");
       print("Result: $result");
@@ -507,7 +507,7 @@ class MatrixCalendar {
         calendarId = result["event_id"] as String;
 
         await widgetApi.sendAction(FromWidgetAction.sendEvent, {
-          "type": "chat.commet.calendars",
+          "type": "chat.tungstn.calendars",
           "state_key": "",
           "content": {
             "calendars": [
@@ -573,7 +573,7 @@ class MatrixCalendar {
   Map<String, dynamic>? onEventReceived(Map<String, dynamic> apiData) {
     var eventType = apiData["data"]["type"];
 
-    if (eventType == "chat.commet.calendar_events") {
+    if (eventType == "chat.tungstn.calendar_events") {
       handleCalendarEventReceived(apiData["data"]);
     }
 
@@ -638,7 +638,7 @@ class MatrixCalendar {
 
   Future<void> migrateRoomStateEvents(
       Function(int progress, int total) onProgress) async {
-    var stateEvent = roomState["chat.commet.calendar_event"]![widgetApi.userId];
+    var stateEvent = roomState["chat.tungstn.calendar_event"]![widgetApi.userId];
 
     var events = Map<String, dynamic>.from(
         stateEvent["content"]['events'] as Map<String, dynamic>);
@@ -679,10 +679,10 @@ class MatrixCalendar {
       onProgress(eventsLeft, total);
 
       var migratedContent = {
-        "type": "chat.commet.calendar_events",
+        "type": "chat.tungstn.calendar_events",
         "content": {
           "m.relates_to": {"event_id": calendarId, "rel_type": "m.reference"},
-          "format": "chat.commet.calendar.event.rfc8984",
+          "format": "chat.tungstn.calendar.event.rfc8984",
           if (remoteSource != null) "remote_source_id": remoteSource,
           "events": eventsGroup,
         }
@@ -697,7 +697,7 @@ class MatrixCalendar {
     }
 
     await widgetApi.sendAction(FromWidgetAction.sendEvent, {
-      "type": "chat.commet.calendar_event",
+      "type": "chat.tungstn.calendar_event",
       "state_key": widgetApi.userId,
       "content": {}
     });

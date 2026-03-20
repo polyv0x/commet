@@ -1,0 +1,285 @@
+import 'dart:async';
+import 'dart:ui';
+
+import 'package:tungstn/client/auth.dart';
+import 'package:tungstn/client/client.dart';
+import 'package:tungstn/client/matrix/matrix_client.dart';
+import 'package:tungstn/main.dart';
+import 'package:tungstn/ui/atoms/shader/star_trails.dart';
+import 'package:tungstn/ui/navigation/navigation_utils.dart';
+import 'package:tungstn/ui/pages/login/login_page_view.dart';
+import 'package:tungstn/ui/pages/settings/app_settings_page.dart';
+import 'package:tungstn/ui/pages/settings/categories/about/settings_category_about.dart';
+import 'package:tungstn/ui/pages/signup/signup_page.dart';
+import 'package:tungstn/utils/debounce.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:tungstn/ui/navigation/adaptive_dialog.dart' show AdaptiveDialog, DialogType;
+import 'package:tiamat/atoms/circle_button.dart';
+import 'package:tiamat/tiamat.dart' as tiamat;
+
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key, this.onSuccess, this.canNavigateBack = false});
+  final bool canNavigateBack;
+  final Function(Client loggedInClient)? onSuccess;
+
+  @override
+  State<LoginPage> createState() => LoginPageState();
+}
+
+class LoginPageState extends State<LoginPage> {
+  String get messageLoginFailed => Intl.message(
+        "Login Failed...",
+        name: "messageLoginFailed",
+        desc: "Generic text to show that an attempted login has failed",
+      );
+
+  String get messageAlreadyLoggedIn => Intl.message(
+        "You have already logged in to this account",
+        name: "messageAlreadyLoggedIn",
+        desc:
+            "An error message displayed when the user attempts to add an account which has already been logged in to on this device",
+      );
+
+  String get messageInvalidUsernameOrPassword => Intl.message(
+      "Invalid username or password",
+      name: "messageInvalidUsernameOrPassword",
+      desc:
+          "An error message displayed when the user attempts to log into an account using the wrong username/password combination");
+
+  StreamSubscription? progressSubscription;
+  double? progress;
+  List<LoginFlow>? loginFlows;
+  Client? loginClient;
+
+  final Debouncer homeserverUpdateDebouncer = Debouncer(
+    delay: const Duration(seconds: 1),
+  );
+
+  bool loadingServerInfo = false;
+  bool isServerValid = false;
+  bool isLoggingIn = false;
+  bool canRegister = true;
+  bool _showSignup = false;
+
+  @override
+  void initState() {
+    var internalId = MatrixClient.newLoginClientName();
+    MatrixClient.create(internalId).then((client) {
+      loginClient = client;
+
+      progressSubscription = loginClient!.connectionStatusChanged.stream.listen(
+        onLoginProgressChanged,
+      );
+    });
+
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final card = _showSignup
+        ? SignupPage(
+            key: const ValueKey('signup'),
+            onSuccess: widget.onSuccess,
+            onBack: () => setState(() => _showSignup = false),
+          )
+        : LoginPageView(
+            key: const ValueKey('login'),
+            canNavigateBack: widget.canNavigateBack,
+            progress: progress,
+            updateHomeserver: (value) {
+              setState(() {
+                loginFlows = null;
+                isServerValid = false;
+                loadingServerInfo = true;
+              });
+              homeserverUpdateDebouncer.run(() => updateHomeserver(value));
+            },
+            flows: loginFlows,
+            doSsoLogin: doSsoLogin,
+            doPasswordLogin: doPasswordLogin,
+            isLoggingIn: isLoggingIn,
+            loadingServerInfo: loadingServerInfo,
+            hasSsoSupport:
+                loginFlows?.whereType<SsoLoginFlow>().isNotEmpty == true,
+            hasPasswordSupport:
+                loginFlows?.whereType<PasswordLoginFlow>().isNotEmpty == true,
+            isServerValid: isServerValid,
+            canRegister: canRegister,
+            onLoginSuccess: widget.onSuccess,
+            onCreateAccount: () => setState(() => _showSignup = true),
+          );
+
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      body: Stack(
+        children: [
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+            child: const StarTrailsBackground(),
+          ),
+          SafeArea(
+            child: Stack(
+              children: [
+                Scaffold(
+                  backgroundColor: Colors.transparent,
+                  body: Material(
+                    color: Colors.transparent,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        switchInCurve: Curves.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        transitionBuilder: (child, animation) =>
+                            ScaleTransition(
+                              scale: Tween<double>(begin: 0.96, end: 1.0)
+                                  .animate(animation),
+                              child: FadeTransition(
+                                  opacity: animation, child: child),
+                            ),
+                        child: card,
+                      ),
+                    ),
+                  ),
+                ),
+                if (widget.canNavigateBack)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: CircleButton(
+                        radius: 25,
+                        icon: Icons.arrow_back,
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: SizedBox(
+                height: 30,
+                width: 30,
+                child: tiamat.IconButton(
+                  icon: Icons.settings,
+                  onPressed: () => NavigationUtils.navigateTo(
+                      context, const AppSettingsPage()),
+                ),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                  0, 0, 0, MediaQuery.of(context).padding.bottom),
+              child: SettingsCategoryAbout.info(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> doLogin(Future<LoginResult> Function() login) async {
+    if (loginClient == null) return;
+    if (isServerValid == false) {
+      return;
+    }
+
+    setState(() {
+      isLoggingIn = true;
+    });
+
+    LoginResult? result;
+
+    try {
+      result = await login();
+    } catch (_) {}
+
+    if (!(result is LoginResultSuccess)) {
+      setState(() {
+        isLoggingIn = false;
+      });
+    }
+
+    String? message = switch (result) {
+      LoginResultSuccess _ => null,
+      LoginResultError e => e.errorMessage,
+      LoginResultCancelled _ => "Login Cancelled",
+      LoginResultAlreadyLoggedIn _ => messageAlreadyLoggedIn,
+      LoginResultFailed _ => messageLoginFailed,
+      LoginResult() => throw UnimplementedError(),
+      null => throw UnimplementedError(),
+    };
+
+    if (message != null) {
+      if (mounted) {
+        AdaptiveDialog.show(
+          context,
+          title: "Login failed",
+          type: DialogType.error,
+          builder: (_) => Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: tiamat.Text.body(message),
+          ),
+        );
+      }
+    }
+
+    if (result is LoginResultSuccess) {
+      clientManager?.addClient(loginClient!);
+
+      widget.onSuccess?.call(loginClient!);
+    }
+  }
+
+  Future<void> doSsoLogin(SsoLoginFlow flow) async {
+    if (loginClient == null) return;
+    await doLogin(() => loginClient!.executeLoginFlow(flow));
+  }
+
+  Future<void> doPasswordLogin(
+    PasswordLoginFlow flow,
+    String username,
+    String password,
+  ) async {
+    if (loginClient == null) return;
+    flow.username = username;
+    flow.password = password;
+
+    await doLogin(() => loginClient!.executeLoginFlow(flow));
+  }
+
+  void onLoginProgressChanged(ClientConnectionStatusUpdate event) {
+    if (!mounted) return;
+    setState(() {
+      progress = event.progress;
+    });
+  }
+
+  Future<void> updateHomeserver(String input) async {
+    if (loginClient == null) return;
+
+    setState(() {
+      loginFlows = null;
+      loadingServerInfo = true;
+      isServerValid = false;
+    });
+
+    var uri = Uri.https(input);
+    var result = await loginClient!.setHomeserver(uri);
+
+    setState(() {
+      loadingServerInfo = false;
+      isServerValid = result.$1;
+      loginFlows = result.$2;
+      canRegister = result.$3;
+    });
+  }
+}

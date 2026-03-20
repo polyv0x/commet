@@ -1,11 +1,11 @@
 
-commet/coverage/lcov.info
-commet/assets/js/package/olm.js
-commet/assets/js/package/olm.wasm
-commet/assets/js/package/olm_legacy.js
-commet/.vodozemac/
-commet/assets/vodozemac/vodozemac_bindings_dart_bg.wasm
-commet/assets/vodozemac/vodozemac_bindings_dart.js
+tungstn/coverage/lcov.info
+tungstn/assets/js/package/olm.js
+tungstn/assets/js/package/olm.wasm
+tungstn/assets/js/package/olm_legacy.js
+tungstn/.vodozemac/
+tungstn/assets/vodozemac/vodozemac_bindings_dart_bg.wasm
+tungstn/assets/vodozemac/vodozemac_bindings_dart.js
 /.dart_tool
 build/.last_build_id
 widgets/matrix_widget_api/build/.last_build_id
@@ -17,4 +17,4 @@ widgets/calendar/android/local.properties
 /nginx/
 /.build-cache/pub-cache
 /CLAUDE.md
-/commet/assets/config/global_config.json
+/tungstn/assets/config/global_config.json

@@ -1,0 +1,366 @@
+import 'package:tungstn/client/auth.dart';
+import 'package:tungstn/client/client.dart';
+import 'package:tungstn/config/global_config.dart';
+import 'package:tungstn/ui/atoms/animated_entry.dart';
+import 'package:tungstn/utils/common_strings.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:intl/intl.dart';
+import 'package:tiamat/tiamat.dart' as tiamat;
+
+class LoginPageView extends StatefulWidget {
+  const LoginPageView(
+      {super.key,
+      this.canNavigateBack = false,
+      this.progress,
+      this.flows,
+      required this.isLoggingIn,
+      this.homeserverChecked,
+      this.doSsoLogin,
+      this.doPasswordLogin,
+      this.loadingServerInfo = false,
+      this.isServerValid = false,
+      this.hasSsoSupport = false,
+      this.hasPasswordSupport = false,
+      this.canRegister = true,
+      this.updateHomeserver,
+      this.onLoginSuccess,
+      this.onCreateAccount});
+  final bool canNavigateBack;
+  final bool isLoggingIn;
+  final bool? homeserverChecked;
+  final double? progress;
+  final List<LoginFlow>? flows;
+  final bool loadingServerInfo;
+  final bool isServerValid;
+  final bool hasSsoSupport;
+  final bool hasPasswordSupport;
+  final bool canRegister;
+  final Future<void> Function(SsoLoginFlow flow)? doSsoLogin;
+  final Future<void> Function(
+          PasswordLoginFlow flow, String username, String password)?
+      doPasswordLogin;
+
+  final Function(String)? updateHomeserver;
+  final Function(Client loggedInClient)? onLoginSuccess;
+  final VoidCallback? onCreateAccount;
+
+  @override
+  State<LoginPageView> createState() => _LoginPageViewState();
+}
+
+class _LoginPageViewState extends State<LoginPageView> {
+  final TextEditingController _homeserverTextField = TextEditingController(
+    text: GlobalConfig.defaultHomeserver,
+  );
+  final TextEditingController _usernameTextField = TextEditingController();
+  final TextEditingController _passwordTextField = TextEditingController();
+
+  String get promptHomeserver => Intl.message("Homeserver",
+      name: "promptHomeserver",
+      desc: "Placeholder text for homeserver field on login form");
+
+  String get promptUsername => Intl.message("Username",
+      name: "promptUsername",
+      desc: "Placeholder text for username field on login form");
+
+  String get promptPassword => Intl.message("Password",
+      name: "promptPassword",
+      desc: "Placeholder text for password field on login form");
+
+  String get promptSubmitLogin => Intl.message("Login",
+      name: "promptSubmitLogin",
+      desc: "Prompt to submit the username and password, and attempt to login");
+
+  @override
+  void initState() {
+    super.initState();
+    if (_homeserverTextField.text != "") {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        _onHomeserverTextUpdated();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return loginField(context);
+  }
+
+  Widget loginField(BuildContext context) {
+    return Stack(
+      children: [
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Container(
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.outline, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                        blurRadius: 50,
+                        color: Theme.of(context).shadowColor.withAlpha(50))
+                  ]),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Stack(
+                  children: [
+                    IgnorePointer(
+                      ignoring: widget.isLoggingIn,
+                      child: AnimatedOpacity(
+                          opacity: widget.isLoggingIn ? 0.5 : 1.0,
+                          duration: Durations.short2,
+                          child: loginInputs(context)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (widget.isLoggingIn)
+          const Center(
+            child: CircularProgressIndicator(),
+          )
+      ],
+    );
+  }
+
+  Widget loginInputs(BuildContext context) {
+    var ssoFlows = widget.flows?.whereType<SsoLoginFlow>().toList();
+    SsoLoginFlow? defaultSso;
+    if (ssoFlows != null) {
+      defaultSso = ssoFlows.where((e) => e.id == null).firstOrNull;
+    }
+
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      Flexible(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            appIcon(context),
+          ],
+        ),
+      ),
+      const SizedBox(height: 16),
+      homeserverEntry(),
+      if (widget.hasPasswordSupport || widget.hasSsoSupport) ...[
+        const SizedBox(height: 16),
+        if (widget.hasPasswordSupport) usenamePasswordLoginInputs(),
+        if (widget.hasSsoSupport) ...[
+          if (widget.hasPasswordSupport)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: AnimatedEntry(
+                delay: const Duration(milliseconds: 150),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(width: 100, height: 10, child: tiamat.Seperator()),
+                    tiamat.Text.labelLow(CommonStrings.labelOr),
+                    const SizedBox(width: 100, height: 10, child: tiamat.Seperator()),
+                  ],
+                ),
+              ),
+            ),
+          if (defaultSso != null)
+            AnimatedEntry(
+              delay: const Duration(milliseconds: 200),
+              child: tiamat.Button.secondary(
+                text: "Login with " + defaultSso.name,
+                onTap: () => widget.doSsoLogin?.call(defaultSso!),
+              ),
+            ),
+          if (ssoFlows != null)
+            AnimatedEntry(
+              delay: const Duration(milliseconds: 250),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: 10,
+                  children: ssoFlows
+                      .whereType<SsoLoginFlow>()
+                      .where((e) => e != defaultSso)
+                      .map((e) => ElevatedButton.icon(
+                            icon: SizedBox(
+                              width: e.icon == null ? 0 : 32,
+                              height: 48,
+                              child: e.icon != null ? Image(image: e.icon!) : null,
+                            ),
+                            label: Text("Continue with ${e.name}"),
+                            onPressed: () => widget.doSsoLogin?.call(e),
+                          ))
+                      .toList(),
+                ),
+              ),
+            ),
+        ],
+      ],
+      SizedBox(
+        height: 15,
+        child: Center(
+          child: SizedBox(
+            height: 5,
+            child: widget.progress == null
+                ? null
+                : LinearProgressIndicator(
+                    value: widget.progress,
+                  ),
+          ),
+        ),
+      ),
+    ]);
+  }
+
+  Column usenamePasswordLoginInputs() {
+    return Column(
+      children: [
+        AnimatedEntry(child: usernameEntry()),
+        const SizedBox(height: 16),
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 50),
+          child: passwordEntry(),
+        ),
+        const SizedBox(height: 16),
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 100),
+          child: loginButton(),
+        ),
+        const SizedBox(height: 8),
+        if (widget.canRegister) ...[
+          AnimatedEntry(
+            delay: const Duration(milliseconds: 150),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(width: 100, height: 10, child: tiamat.Seperator()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: tiamat.Text.labelLow(CommonStrings.labelOr),
+                ),
+                const SizedBox(width: 100, height: 10, child: tiamat.Seperator()),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          AnimatedEntry(
+            delay: const Duration(milliseconds: 200),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: tiamat.Button.secondary(
+                text: "Create account",
+                onTap: widget.onCreateAccount,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Text appName() {
+    return const Text(
+      "Tungstn",
+      style: TextStyle(fontFamily: 'Jellee', fontSize: 30),
+    );
+  }
+
+  SizedBox loginButton() {
+    var flow = widget.flows?.whereType<PasswordLoginFlow>().firstOrNull;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: tiamat.Button.gradient(
+        text: promptSubmitLogin,
+        onTap: flow != null
+            ? () => widget.doPasswordLogin
+                ?.call(flow, _usernameTextField.text, _passwordTextField.text)
+            : null,
+      ),
+    );
+  }
+
+  TextField passwordEntry() {
+    return TextField(
+      autocorrect: false,
+      controller: _passwordTextField,
+      obscureText: true,
+      readOnly: widget.isLoggingIn,
+      decoration: InputDecoration(
+        border: const OutlineInputBorder(),
+        labelText: promptPassword,
+      ),
+    );
+  }
+
+  TextField usernameEntry() {
+    return TextField(
+      autocorrect: false,
+      controller: _usernameTextField,
+      readOnly: widget.isLoggingIn,
+      inputFormatters: [FilteringTextInputFormatter.deny(RegExp("[ ]"))],
+      decoration: InputDecoration(
+        border: const OutlineInputBorder(),
+        labelText: promptUsername,
+      ),
+    );
+  }
+
+  Widget homeserverEntry() {
+    return TextField(
+      autocorrect: false,
+      controller: _homeserverTextField,
+      readOnly: widget.isLoggingIn,
+      onChanged: widget.updateHomeserver,
+      keyboardType: TextInputType.url,
+      inputFormatters: [FilteringTextInputFormatter.deny(RegExp("[ ]"))],
+      decoration: InputDecoration(
+          prefixText: 'https://',
+          border: const OutlineInputBorder(),
+          labelText: promptHomeserver,
+          suffix: homeserverEntrySuffix()),
+    );
+  }
+
+  Widget homeserverEntrySuffix() {
+    if (widget.loadingServerInfo) {
+      return const SizedBox(
+          width: 15,
+          height: 15,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+          ));
+    }
+
+    return Icon(
+      widget.isServerValid ? Icons.check : Icons.close,
+      size: 15,
+      color: widget.isServerValid ? Colors.greenAccent : Colors.redAccent,
+    );
+  }
+
+  SizedBox appIcon(BuildContext context) {
+    return SizedBox(
+      width: 50,
+      height: 50,
+      child: SvgPicture.asset(
+        "assets/images/app_icon/tungstn-logo-flat.svg",
+        colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+      ),
+    );
+  }
+
+  void _onHomeserverTextUpdated() {
+    if (widget.updateHomeserver != null) {
+      widget.updateHomeserver?.call(_homeserverTextField.text);
+    }
+  }
+}

@@ -1,0 +1,44 @@
+import 'package:tungstn/config/build_config.dart';
+import 'package:tungstn/config/platform_utils.dart';
+import 'package:tungstn/main.dart';
+import 'package:tungstn/ui/pages/settings/categories/app/shortcut_settings/hyprland_shortcut_settings_page.dart';
+import 'package:tungstn/ui/pages/settings/categories/app/shortcut_settings/keyboard_hook_shortcuts_settings_page.dart';
+import 'package:tungstn/ui/pages/settings/categories/app/shortcut_settings/outsource_shortcut_settings_page.dart';
+import 'package:tungstn/utils/system_wide_shortcuts/system_wide_shortcuts.dart';
+import 'package:flutter/material.dart';
+
+class ShortcutSettingsPage extends StatelessWidget {
+  const ShortcutSettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    if (SystemWideShortcuts.isSupported == false) {
+      return Placeholder();
+    }
+
+    final bool isHyprland = SystemWideShortcuts.isHyprland;
+
+    bool showOutsourceMenu = !isHyprland &&
+        PlatformUtils.isDisplayServer(DisplayServer.Wayland) &&
+        PlatformUtils.isDesktopEnvironment(DesktopEnvironment.KDEPlasma);
+
+    bool showHooksMenu = !isHyprland && !showOutsourceMenu;
+
+    if (preferences.developerMode.value) {
+      showHooksMenu = true;
+    }
+
+    if (BuildConfig.IS_FLATPAK) {
+      showHooksMenu = false;
+    }
+
+    return Column(
+      spacing: 8,
+      children: [
+        if (isHyprland) const HyprlandShortcutSettingsPage(),
+        if (showOutsourceMenu) OutsourceShortcutSettingsPage(),
+        if (showHooksMenu) KeyboardHookShortcutsSettingsPage(),
+      ],
+    );
+  }
+}

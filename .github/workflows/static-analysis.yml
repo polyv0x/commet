@@ -4,7 +4,7 @@ on:
   merge_group:
 
 env:
-  PROJECT_PATH: commet
+  PROJECT_PATH: tungstn
 
 jobs:
   static-analysis:

@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT_PATH: commet
-  COMMET_PROD: 1
+  PROJECT_PATH: tungstn
+  TUNGSTN_PROD: 1
 
 jobs:
   release-windows:
@@ -30,18 +30,18 @@ jobs:
         
       - name: Code Generation
         run: |
-          cd .\commet
+          cd .\tungstn
           git config --global core.longpaths true
           dart run scripts/codegen.dart
 
       - name: Build Windows App
         run: |
-          cd .\commet
+          cd .\tungstn
           dart run scripts/build_release.dart --platform windows --version_tag ${{ github.event.release.tag_name || 'v0.0.0-artifact' }} --git_hash ${{ github.sha }}
 
-      - name: Archive 
-        run: tar -a -c -f commet-windows.zip -C .\commet\build\windows\x64\runner\ Release
-      
+      - name: Archive
+        run: tar -a -c -f tungstn-windows.zip -C .\tungstn\build\windows\x64\runner\ Release
+
       - name: Upload to release
         if: github.event_name == 'release'
         uses: actions/upload-release-asset@v1
@@ -49,16 +49,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: .\commet-windows.zip
-          asset_name: commet-windows.zip
+          asset_path: .\tungstn-windows.zip
+          asset_name: tungstn-windows.zip
           asset_content_type: application/zip
 
       - name: Upload Artifact
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: commet-windows.zip
-          path: .\commet-windows.zip
+          name: tungstn-windows.zip
+          path: .\tungstn-windows.zip
 
 
   release-android:
@@ -134,16 +134,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: commet/build/app/outputs/flutter-apk/app-release.apk
-          asset_name: commet-android.apk
+          asset_path: tungstn/build/app/outputs/flutter-apk/app-release.apk
+          asset_name: tungstn-android.apk
           asset_content_type: application/vnd.android.package-archive
 
       - name: Upload Artifact
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: commet-android.apk
-          path: commet/build/app/outputs/flutter-apk/app-release.apk
+          name: tungstn-android.apk
+          path: tungstn/build/app/outputs/flutter-apk/app-release.apk
 
   release-android-google-services:
     runs-on: ubuntu-latest
@@ -220,8 +220,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: commet/build/app/outputs/flutter-apk/app-release.apk
-          asset_name: commet-android-google-services.apk
+          asset_path: tungstn/build/app/outputs/flutter-apk/app-release.apk
+          asset_name: tungstn-android-google-services.apk
           asset_content_type: application/vnd.android.package-archive
 
 
@@ -229,8 +229,8 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: commet-android-google-services.apk
-          path: commet/build/app/outputs/flutter-apk/app-release.apk
+          name: tungstn-android-google-services.apk
+          path: tungstn/build/app/outputs/flutter-apk/app-release.apk
 
   release-linux-debian:
   
@@ -296,14 +296,14 @@ jobs:
       - name: Create Package
         run: | 
           mv $PROJECT_PATH/linux/debian/DEBIAN/control-${{ matrix.os }} $PROJECT_PATH/linux/debian/DEBIAN/control
-          cp -r $PROJECT_PATH/linux/debian ./commet-pkg
-          cp -r $PROJECT_PATH/build/linux/x64/release/bundle ./commet-pkg/usr/lib/chat.commet.commetapp
+          cp -r $PROJECT_PATH/linux/debian ./tungstn-pkg
+          cp -r $PROJECT_PATH/build/linux/x64/release/bundle ./tungstn-pkg/usr/lib/chat.tungstn.app
           version=$(echo ${{ github.event.release.tag_name || 'v0.0.0-artifact' }} | grep -oP '[0-9]+([.][0-9]+)+')
           echo $version
-          cd ./commet-pkg
+          cd ./tungstn-pkg
           sed -i "s/{{VERSION_TAG}}/$version/g" ./DEBIAN/control
-          dpkg-deb --build ./ commet-linux-x64.deb
-      
+          dpkg-deb --build ./ tungstn-linux-x64.deb
+
       - name: Upload to release
         if: github.event_name == 'release'
         uses: actions/upload-release-asset@v1
@@ -311,16 +311,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: commet-pkg/commet-linux-x64.deb
-          asset_name: commet-${{ matrix.os }}-x64.deb
+          asset_path: tungstn-pkg/tungstn-linux-x64.deb
+          asset_name: tungstn-${{ matrix.os }}-x64.deb
           asset_content_type: application/vnd.debian.binary-package
 
       - name: Upload Artifact
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: commet-${{ matrix.os }}-x64.deb
-          path: commet-pkg/commet-linux-x64.deb
+          name: tungstn-${{ matrix.os }}-x64.deb
+          path: tungstn-pkg/tungstn-linux-x64.deb
 
   release-linux-flatpak:
     runs-on: ubuntu-latest
@@ -383,16 +383,16 @@ jobs:
         run: | 
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           sudo flatpak install -y flathub org.gnome.Platform//48 org.gnome.Sdk//48
-          mkdir -p commet/linux/flatpak/commet
-          cp -r $PROJECT_PATH/build/linux/x64/release/bundle $PROJECT_PATH/linux/flatpak/commet/bundle
+          mkdir -p tungstn/linux/flatpak/tungstn
+          cp -r $PROJECT_PATH/build/linux/x64/release/bundle $PROJECT_PATH/linux/flatpak/tungstn/bundle
           version=$(echo ${{ github.event.release.tag_name || 'v0.0.0-artifact' }} | grep -oP '[0-9]+([.][0-9]+)+')
           echo $version
           cd $PROJECT_PATH/linux/flatpak
-          sed -i "s/{{VERSION_TAG}}/$version/g" ./chat.commet.commetapp.desktop
-          sed -i "s/{{VERSION_TAG}}/$version/g" ./chat.commet.commetapp.metainfo.xml
-          flatpak-builder --force-clean build-dir chat.commet.commetapp.yaml --repo=repo
-          flatpak build-bundle repo chat.commet.commetapp.flatpak chat.commet.commetapp
-      
+          sed -i "s/{{VERSION_TAG}}/$version/g" ./chat.tungstn.app.desktop
+          sed -i "s/{{VERSION_TAG}}/$version/g" ./chat.tungstn.app.metainfo.xml
+          flatpak-builder --force-clean build-dir chat.tungstn.app.yaml --repo=repo
+          flatpak build-bundle repo chat.tungstn.app.flatpak chat.tungstn.app
+
       - name: Upload to release
         if: github.event_name == 'release'
         uses: actions/upload-release-asset@v1
@@ -400,16 +400,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: commet/linux/flatpak/chat.commet.commetapp.flatpak
-          asset_name: chat.commet.commetapp.flatpak
+          asset_path: tungstn/linux/flatpak/chat.tungstn.app.flatpak
+          asset_name: chat.tungstn.app.flatpak
           asset_content_type: application/octet-stream
 
       - name: Upload Artifact
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: chat.commet.commetapp.flatpak
-          path: commet/linux/flatpak/chat.commet.commetapp.flatpak
+          name: chat.tungstn.app.flatpak
+          path: tungstn/linux/flatpak/chat.tungstn.app.flatpak
 
   release-linux-portable:
     runs-on: ubuntu-latest
@@ -471,8 +471,8 @@ jobs:
       - name: Create archive
         run: |
           cd $PROJECT_PATH/build/linux/x64/release
-          tar -czf commet-linux-portable-x64.tar.gz bundle
-      
+          tar -czf tungstn-linux-portable-x64.tar.gz bundle
+
       - name: Upload to release
         if: github.event_name == 'release'
         uses: actions/upload-release-asset@v1
@@ -480,16 +480,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: commet/build/linux/x64/release/commet-linux-portable-x64.tar.gz
-          asset_name: commet-linux-portable-x64.tar.gz
+          asset_path: tungstn/build/linux/x64/release/tungstn-linux-portable-x64.tar.gz
+          asset_name: tungstn-linux-portable-x64.tar.gz
           asset_content_type: application/gzip
 
       - name: Upload Artifact
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: commet-linux-portable-x64.tar.gz
-          path: commet/build/linux/x64/release/commet-linux-portable-x64.tar.gz
+          name: tungstn-linux-portable-x64.tar.gz
+          path: tungstn/build/linux/x64/release/tungstn-linux-portable-x64.tar.gz
 
 
   release-web:
@@ -532,8 +532,8 @@ jobs:
       - name: Create archive
         run: |
           cd $PROJECT_PATH/build
-          tar -czf commet-web.tar.gz web
-      
+          tar -czf tungstn-web.tar.gz web
+
       - name: Upload to release
         if: github.event_name == 'release'
         uses: actions/upload-release-asset@v1
@@ -541,13 +541,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: commet/build/commet-web.tar.gz
-          asset_name: commet-web.tar.gz
+          asset_path: tungstn/build/tungstn-web.tar.gz
+          asset_name: tungstn-web.tar.gz
           asset_content_type: application/gzip
 
       - name: Upload Artifact
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: commet-web.tar.gz
-          path: commet/build/commet-web.tar.gz
+          name: tungstn-web.tar.gz
+          path: tungstn/build/tungstn-web.tar.gz
