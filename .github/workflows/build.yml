@@ -4,9 +4,10 @@ name: build
 on:
   pull_request:
   merge_group:
+  workflow_dispatch:
 
 env:
-  PROJECT_PATH: commet
+  PROJECT_PATH: tungstn
 
 jobs:
   build-windows:
@@ -28,13 +29,13 @@ jobs:
         
       - name: Code Generation
         run: |
-          cd .\commet
+          cd .\tungstn
           git config --global core.longpaths true
           dart run scripts/codegen.dart
 
       - name: Build Windows App
         run: |
-          cd .\commet
+          cd .\tungstn
           flutter build windows --release --dart-define PLATFORM=windows
 
   build-android:
@@ -193,7 +194,7 @@ jobs:
 
       - name: Run App
         run: |
-          ldd $PROJECT_PATH/build/linux/x64/release/bundle/commet
+          ldd $PROJECT_PATH/build/linux/x64/release/bundle/tungstn
 
   build-web:
     runs-on: ubuntu-latest
